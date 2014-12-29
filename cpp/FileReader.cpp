@@ -562,7 +562,6 @@ bool FileReader_i::process_bluefile_fixedheader(shared_ptr_file_packet current_p
     	return false;
     }
 
-
     std::string format_code = hcb->getFormatCode();
     //mode
     SUPPORTED_DATA_TYPE::mode_enum mode = SUPPORTED_DATA_TYPE::_scalar_;
@@ -670,6 +669,7 @@ bool FileReader_i::process_bluefile_extendedheader(shared_ptr_file_packet curren
 
     std::vector<blue::Keyword> blue_keywords;
     e_hdr->getKeywords(&blue_keywords);
+
     for (std::vector<blue::Keyword>::iterator keyIter = blue_keywords.begin(); keyIter != blue_keywords.end(); keyIter++) {
         size_t cur_kw_size = current_packet->sri.keywords.length();
         current_packet->sri.keywords.length(cur_kw_size + 1);
@@ -708,7 +708,18 @@ bool FileReader_i::process_bluefile_extendedheader(shared_ptr_file_packet curren
         } else if (kw_format == blue::PACKED || kw_format == blue::ASCII) {
             std::string tmp;
             keyIter->getValue(&tmp);
-            value <<= CORBA::string_dup(tmp.c_str());
+
+            // CA-22: Some Blue/Platinum Files have COL_RF as a string
+            // but for SRI, it should be a CORBA::Double
+            if (keyIter->getName() != "COL_RF") {
+                value <<= CORBA::string_dup(tmp.c_str());
+            } else {
+            	double tmpDouble;
+            	std::stringstream ss;
+            	ss << tmp;
+            	ss >> tmpDouble;
+            	value <<= CORBA::Double(tmpDouble);
+            }
         }
         current_packet->sri.keywords[cur_kw_size].value = value;
         
@@ -718,9 +729,6 @@ bool FileReader_i::process_bluefile_extendedheader(shared_ptr_file_packet curren
             current_packet->tstamp =  get_utc_time(1,time);
             current_packet->valid_timestamp = true;
         }
-        
-        
-        
     }
     return true;
 }
