@@ -467,10 +467,18 @@ void FileReader_i::read_ahead_thread() {
 								break;
 							}
 
+							// Check whether or not the data is real for determining
+							// COL_RF and IF to adhere to FS/4 rule
+							bool isReal = true;
+
+							if (hdr.getFormatCode()[0] == 'C') {
+								isReal = false;
+							}
+
 							filesystem.file_seek(fs_iter->filename, (unsigned long long) hdr.getExtStart() * BLUEFILE_BLOCK_SIZE);
 							filesystem.read(fs_iter->filename, &pkt->dataBuffer, hdr.getExtSize());
 							blue::ExtendedHeader e_hdr;
-							if (!process_bluefile_extendedheader(pkt, &e_hdr)) {
+							if (!process_bluefile_extendedheader(pkt, &e_hdr, isReal)) {
 								std::string error_msg = "ERROR: BLUE FILE EXTENDED HEADER IS INVALID FOR FILE:  " + std::string(fs_iter->filename);
 								std::cout << error_msg << std::endl;
 								fs_iter->error_msg = error_msg;
@@ -662,17 +670,38 @@ bool FileReader_i::process_bluefile_fixedheader(shared_ptr_file_packet current_p
 
 }
 
-bool FileReader_i::process_bluefile_extendedheader(shared_ptr_file_packet current_packet, blue::ExtendedHeader* e_hdr) {
+bool FileReader_i::process_bluefile_extendedheader(shared_ptr_file_packet current_packet, blue::ExtendedHeader* e_hdr, bool isReal) {
     int ret = e_hdr->loadFromBuffer(& current_packet->dataBuffer[0], current_packet->dataBuffer.size(), false);
     if (ret != 0)
         return false;
+
+    size_t COL_RFIndex = 0;
+    CORBA::Double IF = 0;
+
+    bool foundCOL_RF = false;
+    bool foundIF = false;
 
     std::vector<blue::Keyword> blue_keywords;
     e_hdr->getKeywords(&blue_keywords);
 
     for (std::vector<blue::Keyword>::iterator keyIter = blue_keywords.begin(); keyIter != blue_keywords.end(); keyIter++) {
+    	// Don't insert IF into SRI keywords
+    	if (not foundIF && keyIter->getName() == "IF") {
+    		double tmp;
+    		keyIter->getValue(&tmp);
+    		IF = tmp;
+
+    		foundIF = true;
+    		continue;
+    	}
+
         size_t cur_kw_size = current_packet->sri.keywords.length();
         current_packet->sri.keywords.length(cur_kw_size + 1);
+
+        if (keyIter->getName() == "COL_RF") {
+        	COL_RFIndex = cur_kw_size;
+        	foundCOL_RF = true;
+        }
 
         current_packet->sri.keywords[cur_kw_size].id = keyIter->getName().c_str();
         blue::FormatEnum kw_format = keyIter->getFormat();
@@ -730,6 +759,32 @@ bool FileReader_i::process_bluefile_extendedheader(shared_ptr_file_packet curren
             current_packet->valid_timestamp = true;
         }
     }
+
+    // CA-23: Check for adherence to FS/4 rule and if the check
+    // fails, enforce it
+    if (isReal && foundCOL_RF && foundIF) {
+    	// Check if the two numbers are within 0.5 Hz of one another
+    	if (std::abs(IF - (this->sample_rate_d / 4.0)) > 0.5) {
+    		LOG_INFO(FileReader_i, "The IF center frequency does not adhere to the Fs/4 rule.  Adjusting COL_RF");
+
+    		CORBA::Double COL_RF;
+
+    		current_packet->sri.keywords[COL_RFIndex].value >>= COL_RF;
+
+    		CORBA::Double newCOL_RF = COL_RF - IF + this->sample_rate_d / 4.0;
+
+    		current_packet->sri.keywords[COL_RFIndex].value <<= newCOL_RF;
+    	}
+    }
+    // Otherwise, if the IF keyword is found, include it in the
+    // SRI keywords
+    else if (foundIF) {
+    	size_t cur_kw_size = current_packet->sri.keywords.length();
+    	current_packet->sri.keywords.length(cur_kw_size + 1);
+    	current_packet->sri.keywords[cur_kw_size].id = "IF";
+    	current_packet->sri.keywords[cur_kw_size].value <<= IF;
+    }
+
     return true;
 }
 
