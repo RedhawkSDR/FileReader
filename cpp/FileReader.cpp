@@ -760,7 +760,7 @@ bool FileReader_i::process_bluefile_extendedheader(shared_ptr_file_packet curren
         }
     }
 
-    // CA-23: Check for adherence to FS/4 rule and if the check
+    // Check for adherence to FS/4 rule and if the check
     // fails, enforce it
     if (isReal && foundCOL_RF && foundIF) {
     	// Check if the two numbers are within 0.5 Hz of one another
