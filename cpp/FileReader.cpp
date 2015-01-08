@@ -709,7 +709,7 @@ bool FileReader_i::process_bluefile_extendedheader(shared_ptr_file_packet curren
             std::string tmp;
             keyIter->getValue(&tmp);
 
-            // CA-22: Some Blue/Platinum Files have COL_RF as a string
+            // Some Blue/Platinum Files have COL_RF as a string
             // but for SRI, it should be a CORBA::Double
             if (keyIter->getName() != "COL_RF") {
                 value <<= CORBA::string_dup(tmp.c_str());
