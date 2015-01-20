@@ -22,9 +22,9 @@ if [ "$1" = "rpm" ]; then
     if [ -e FileReader.spec ]; then
         mydir=`dirname $0`
         tmpdir=`mktemp -d`
-        cp -r ${mydir} ${tmpdir}/FileReader-3.0.0
-        tar czf ${tmpdir}/FileReader-3.0.0.tar.gz --exclude=".svn" -C ${tmpdir} FileReader-3.0.0
-        rpmbuild -ta ${tmpdir}/FileReader-3.0.0.tar.gz
+        cp -r ${mydir} ${tmpdir}/FileReader-4.0.0
+        tar czf ${tmpdir}/FileReader-4.0.0.tar.gz --exclude=".svn" -C ${tmpdir} FileReader-4.0.0
+        rpmbuild -ta ${tmpdir}/FileReader-4.0.0.tar.gz
         rm -rf $tmpdir
     else
         echo "Missing RPM spec file in" `pwd`

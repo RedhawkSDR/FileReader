@@ -19,14 +19,12 @@
  along with this program.  If not, see http://www.gnu.org/licenses/.
 -->
 <!DOCTYPE softpkg PUBLIC "-//JTRS//DTD SCA V2.2.2 SPD//EN" "softpkg.dtd">
-<softpkg id="DCE:e908064e-62f4-4641-9fec-76026411b92a" name="FileReader" type="sca_compliant" version="3.0.0">
+<softpkg id="DCE:e908064e-62f4-4641-9fec-76026411b92a" name="FileReader" type="sca_compliant" version="4.0.0">
   <title></title>
   <author>
     <name></name>
   </author>
-  <description>The FileReader component is responsible for reading data from a file on the SCA or local file system, and streaming the data out a BULKIO output port.
-
-Note that connecting the &quot;DomainManager_out&quot; port is optional. You only have to connect if you are using the SCA filesystem to read files AND you have a specific domain you would like to connect to. If not connected, it uses the last valid domain that is found. </description>
+  <description>The FileReader component is responsible for reading data from a file on the SCA or local file system, and streaming the data out a BULKIO output port.</description>
   <propertyfile type="PRF">
     <localfile name="FileReader.prf.xml"/>
   </propertyfile>

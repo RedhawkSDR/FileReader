@@ -31,108 +31,77 @@
 ******************************************************************************************/
 
 FileReader_base::FileReader_base(const char *uuid, const char *label) :
-    Resource_impl(uuid, label),
-    serviceThread(0)
+    Component(uuid, label),
+    ThreadedComponent()
 {
-    construct();
+    loadProperties();
+
+    dataChar_out = new bulkio::OutCharPort("dataChar_out");
+    addPort("dataChar_out", dataChar_out);
+    dataDouble_out = new bulkio::OutDoublePort("dataDouble_out");
+    addPort("dataDouble_out", dataDouble_out);
+    dataFloat_out = new bulkio::OutFloatPort("dataFloat_out");
+    addPort("dataFloat_out", dataFloat_out);
+    dataLong_out = new bulkio::OutLongPort("dataLong_out");
+    addPort("dataLong_out", dataLong_out);
+    dataLongLong_out = new bulkio::OutLongLongPort("dataLongLong_out");
+    addPort("dataLongLong_out", dataLongLong_out);
+    dataOctet_out = new bulkio::OutOctetPort("dataOctet_out");
+    addPort("dataOctet_out", dataOctet_out);
+    dataShort_out = new bulkio::OutShortPort("dataShort_out");
+    addPort("dataShort_out", dataShort_out);
+    dataUlong_out = new bulkio::OutULongPort("dataUlong_out");
+    addPort("dataUlong_out", dataUlong_out);
+    dataUlongLong_out = new bulkio::OutULongLongPort("dataUlongLong_out");
+    addPort("dataUlongLong_out", dataUlongLong_out);
+    dataUshort_out = new bulkio::OutUShortPort("dataUshort_out");
+    addPort("dataUshort_out", dataUshort_out);
+    dataXML_out = new bulkio::OutXMLPort("dataXML_out");
+    addPort("dataXML_out", dataXML_out);
 }
 
-void FileReader_base::construct()
+FileReader_base::~FileReader_base()
 {
-    Resource_impl::_started = false;
-    loadProperties();
-    serviceThread = 0;
-    
-    PortableServer::ObjectId_var oid;
-    DomainManager_out = new CF_DomainManager_Out_i("DomainManager_out", this);
-    oid = ossie::corba::RootPOA()->activate_object(DomainManager_out);
-    dataChar_out = new bulkio::OutCharPort("dataChar_out");
-    oid = ossie::corba::RootPOA()->activate_object(dataChar_out);
-    dataDouble_out = new bulkio::OutDoublePort("dataDouble_out");
-    oid = ossie::corba::RootPOA()->activate_object(dataDouble_out);
-    dataFloat_out = new bulkio::OutFloatPort("dataFloat_out");
-    oid = ossie::corba::RootPOA()->activate_object(dataFloat_out);
-    dataLong_out = new bulkio::OutLongPort("dataLong_out");
-    oid = ossie::corba::RootPOA()->activate_object(dataLong_out);
-    dataLongLong_out = new bulkio::OutLongLongPort("dataLongLong_out");
-    oid = ossie::corba::RootPOA()->activate_object(dataLongLong_out);
-    dataOctet_out = new bulkio::OutOctetPort("dataOctet_out");
-    oid = ossie::corba::RootPOA()->activate_object(dataOctet_out);
-    dataShort_out = new bulkio::OutShortPort("dataShort_out");
-    oid = ossie::corba::RootPOA()->activate_object(dataShort_out);
-    dataUlong_out = new bulkio::OutULongPort("dataUlong_out");
-    oid = ossie::corba::RootPOA()->activate_object(dataUlong_out);
-    dataUlongLong_out = new bulkio::OutULongLongPort("dataUlongLong_out");
-    oid = ossie::corba::RootPOA()->activate_object(dataUlongLong_out);
-    dataUshort_out = new bulkio::OutUShortPort("dataUshort_out");
-    oid = ossie::corba::RootPOA()->activate_object(dataUshort_out);
-    dataXML_out = new bulkio::OutXMLPort("dataXML_out");
-    oid = ossie::corba::RootPOA()->activate_object(dataXML_out);
-
-    registerOutPort(DomainManager_out, DomainManager_out->_this());
-    registerOutPort(dataChar_out, dataChar_out->_this());
-    registerOutPort(dataDouble_out, dataDouble_out->_this());
-    registerOutPort(dataFloat_out, dataFloat_out->_this());
-    registerOutPort(dataLong_out, dataLong_out->_this());
-    registerOutPort(dataLongLong_out, dataLongLong_out->_this());
-    registerOutPort(dataOctet_out, dataOctet_out->_this());
-    registerOutPort(dataShort_out, dataShort_out->_this());
-    registerOutPort(dataUlong_out, dataUlong_out->_this());
-    registerOutPort(dataUlongLong_out, dataUlongLong_out->_this());
-    registerOutPort(dataUshort_out, dataUshort_out->_this());
-    registerOutPort(dataXML_out, dataXML_out->_this());
+    delete dataChar_out;
+    dataChar_out = 0;
+    delete dataDouble_out;
+    dataDouble_out = 0;
+    delete dataFloat_out;
+    dataFloat_out = 0;
+    delete dataLong_out;
+    dataLong_out = 0;
+    delete dataLongLong_out;
+    dataLongLong_out = 0;
+    delete dataOctet_out;
+    dataOctet_out = 0;
+    delete dataShort_out;
+    dataShort_out = 0;
+    delete dataUlong_out;
+    dataUlong_out = 0;
+    delete dataUlongLong_out;
+    dataUlongLong_out = 0;
+    delete dataUshort_out;
+    dataUshort_out = 0;
+    delete dataXML_out;
+    dataXML_out = 0;
 }
 
 /*******************************************************************************************
     Framework-level functions
     These functions are generally called by the framework to perform housekeeping.
 *******************************************************************************************/
-void FileReader_base::initialize() throw (CF::LifeCycle::InitializeError, CORBA::SystemException)
-{
-}
-
 void FileReader_base::start() throw (CORBA::SystemException, CF::Resource::StartError)
 {
-    boost::mutex::scoped_lock lock(serviceThreadLock);
-    if (serviceThread == 0) {
-        serviceThread = new ProcessThread<FileReader_base>(this, 0.1);
-        serviceThread->start();
-    }
-    
-    if (!Resource_impl::started()) {
-    	Resource_impl::start();
-    }
+    Component::start();
+    ThreadedComponent::startThread();
 }
 
 void FileReader_base::stop() throw (CORBA::SystemException, CF::Resource::StopError)
 {
-    boost::mutex::scoped_lock lock(serviceThreadLock);
-    // release the child thread (if it exists)
-    if (serviceThread != 0) {
-        if (!serviceThread->release(2)) {
-            throw CF::Resource::StopError(CF::CF_NOTSET, "Processing thread did not die");
-        }
-        serviceThread = 0;
+    Component::stop();
+    if (!ThreadedComponent::stopThread()) {
+        throw CF::Resource::StopError(CF::CF_NOTSET, "Processing thread did not die");
     }
-    
-    if (Resource_impl::started()) {
-    	Resource_impl::stop();
-    }
-}
-
-CORBA::Object_ptr FileReader_base::getPort(const char* _id) throw (CORBA::SystemException, CF::PortSupplier::UnknownPort)
-{
-
-    std::map<std::string, Port_Provides_base_impl *>::iterator p_in = inPorts.find(std::string(_id));
-    if (p_in != inPorts.end()) {
-    }
-
-    std::map<std::string, CF::Port_var>::iterator p_out = outPorts_var.find(std::string(_id));
-    if (p_out != outPorts_var.end()) {
-        return CF::Port::_duplicate(p_out->second);
-    }
-
-    throw (CF::PortSupplier::UnknownPort());
 }
 
 void FileReader_base::releaseObject() throw (CORBA::SystemException, CF::LifeCycle::ReleaseError)
@@ -144,24 +113,7 @@ void FileReader_base::releaseObject() throw (CORBA::SystemException, CF::LifeCyc
         // TODO - this should probably be logged instead of ignored
     }
 
-    // deactivate ports
-    releaseInPorts();
-    releaseOutPorts();
-
-    delete(DomainManager_out);
-    delete(dataChar_out);
-    delete(dataDouble_out);
-    delete(dataFloat_out);
-    delete(dataLong_out);
-    delete(dataLongLong_out);
-    delete(dataOctet_out);
-    delete(dataShort_out);
-    delete(dataUlong_out);
-    delete(dataUlongLong_out);
-    delete(dataUshort_out);
-    delete(dataXML_out);
-
-    Resource_impl::releaseObject();
+    Component::releaseObject();
 }
 
 void FileReader_base::loadProperties()

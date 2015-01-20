@@ -25,7 +25,7 @@
 int main(int argc, char* argv[])
 {
     FileReader_i* FileReader_servant;
-    Resource_impl::start_component(FileReader_servant, argc, argv);
+    Component::start_component(FileReader_servant, argc, argv);
     return 0;
 }
 

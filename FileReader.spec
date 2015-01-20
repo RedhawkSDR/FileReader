@@ -22,8 +22,14 @@
 %define _prefix %{_sdrroot}
 Prefix:         %{_prefix}
 
+# Point install paths to locations within our target SDR root
+%define _sysconfdir    %{_prefix}/etc
+%define _localstatedir %{_prefix}/var
+%define _mandir        %{_prefix}/man
+%define _infodir       %{_prefix}/info
+
 Name:           FileReader
-Version:        3.0.0
+Version:        4.0.0
 Release:        1%{?dist}
 Summary:        Component %{name}
 
@@ -32,12 +38,12 @@ License:        None
 Source0:        %{name}-%{version}.tar.gz
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
-BuildRequires:  redhawk-devel >= 1.10
-Requires:       redhawk >= 1.10
+BuildRequires:  redhawk-devel >= 1.11
+Requires:       redhawk >= 1.11
 
 # Interface requirements
-BuildRequires:  bulkioInterfaces >= 1.10
-Requires:       bulkioInterfaces >= 1.10
+BuildRequires:  bulkioInterfaces >= 1.11
+Requires:       bulkioInterfaces >= 1.11
 
 BuildRequires:  RedhawkDevUtils_v1-devel >= 3.0.0
 Requires:       RedhawkDevUtils_v1 >= 3.0.0
@@ -47,8 +53,12 @@ Requires:       blueFileLib_v1 >= 1.0.0
 
 %description
 Component %{name}
+
+
 %prep
 %setup -q
+
+
 %build
 # Implementation cpp
 pushd cpp

@@ -26,7 +26,9 @@
     AUTO-GENERATED CODE. DO NOT MODIFY
 
 *******************************************************************************************/
+
 #include <ossie/CorbaUtils.h>
+#include <CF/cf.h>
 
 struct advanced_properties_struct {
     advanced_properties_struct ()
@@ -77,52 +79,132 @@ inline bool operator>>= (const CORBA::Any& a, advanced_properties_struct& s) {
     CF::Properties& props = *temp;
     for (unsigned int idx = 0; idx < props.length(); idx++) {
         if (!strcmp("debug_output", props[idx].id)) {
-            if (!(props[idx].value >>= s.debug_output)) return false;
+            if (!(props[idx].value >>= s.debug_output)) {
+                CORBA::TypeCode_var typecode = props[idx].value.type();
+                if (typecode->kind() != CORBA::tk_null) {
+                    return false;
+                }
+            }
         }
         else if (!strcmp("packet_size", props[idx].id)) {
-            if (!(props[idx].value >>= s.packet_size)) return false;
+            if (!(props[idx].value >>= s.packet_size)) {
+                CORBA::TypeCode_var typecode = props[idx].value.type();
+                if (typecode->kind() != CORBA::tk_null) {
+                    return false;
+                }
+            }
         }
         else if (!strcmp("buffer_size", props[idx].id)) {
-            if (!(props[idx].value >>= s.buffer_size)) return false;
+            if (!(props[idx].value >>= s.buffer_size)) {
+                CORBA::TypeCode_var typecode = props[idx].value.type();
+                if (typecode->kind() != CORBA::tk_null) {
+                    return false;
+                }
+            }
         }
         else if (!strcmp("looping", props[idx].id)) {
-            if (!(props[idx].value >>= s.looping)) return false;
+            if (!(props[idx].value >>= s.looping)) {
+                CORBA::TypeCode_var typecode = props[idx].value.type();
+                if (typecode->kind() != CORBA::tk_null) {
+                    return false;
+                }
+            }
         }
         else if (!strcmp("looping_suppress_eos_until_stop", props[idx].id)) {
-            if (!(props[idx].value >>= s.looping_suppress_eos_until_stop)) return false;
+            if (!(props[idx].value >>= s.looping_suppress_eos_until_stop)) {
+                CORBA::TypeCode_var typecode = props[idx].value.type();
+                if (typecode->kind() != CORBA::tk_null) {
+                    return false;
+                }
+            }
         }
         else if (!strcmp("transition_time", props[idx].id)) {
-            if (!(props[idx].value >>= s.transition_time)) return false;
+            if (!(props[idx].value >>= s.transition_time)) {
+                CORBA::TypeCode_var typecode = props[idx].value.type();
+                if (typecode->kind() != CORBA::tk_null) {
+                    return false;
+                }
+            }
         }
         else if (!strcmp("throttle_rate", props[idx].id)) {
-            if (!(props[idx].value >>= s.throttle_rate)) return false;
+            if (!(props[idx].value >>= s.throttle_rate)) {
+                CORBA::TypeCode_var typecode = props[idx].value.type();
+                if (typecode->kind() != CORBA::tk_null) {
+                    return false;
+                }
+            }
         }
         else if (!strcmp("ignore_header_metadata", props[idx].id)) {
-            if (!(props[idx].value >>= s.ignore_header_metadata)) return false;
+            if (!(props[idx].value >>= s.ignore_header_metadata)) {
+                CORBA::TypeCode_var typecode = props[idx].value.type();
+                if (typecode->kind() != CORBA::tk_null) {
+                    return false;
+                }
+            }
         }
         else if (!strcmp("append_default_sri_keywords", props[idx].id)) {
-            if (!(props[idx].value >>= s.append_default_sri_keywords)) return false;
+            if (!(props[idx].value >>= s.append_default_sri_keywords)) {
+                CORBA::TypeCode_var typecode = props[idx].value.type();
+                if (typecode->kind() != CORBA::tk_null) {
+                    return false;
+                }
+            }
         }
         else if (!strcmp("data_conversion_normalization", props[idx].id)) {
-            if (!(props[idx].value >>= s.data_conversion_normalization)) return false;
+            if (!(props[idx].value >>= s.data_conversion_normalization)) {
+                CORBA::TypeCode_var typecode = props[idx].value.type();
+                if (typecode->kind() != CORBA::tk_null) {
+                    return false;
+                }
+            }
         }
         else if (!strcmp("data_type_conversion", props[idx].id)) {
-            if (!(props[idx].value >>= s.data_type_conversion)) return false;
+            if (!(props[idx].value >>= s.data_type_conversion)) {
+                CORBA::TypeCode_var typecode = props[idx].value.type();
+                if (typecode->kind() != CORBA::tk_null) {
+                    return false;
+                }
+            }
         }
         else if (!strcmp("max_sleep_time", props[idx].id)) {
-            if (!(props[idx].value >>= s.max_sleep_time)) return false;
+            if (!(props[idx].value >>= s.max_sleep_time)) {
+                CORBA::TypeCode_var typecode = props[idx].value.type();
+                if (typecode->kind() != CORBA::tk_null) {
+                    return false;
+                }
+            }
         }
         else if (!strcmp("center_frequency_keywords", props[idx].id)) {
-            if (!(props[idx].value >>= s.center_frequency_keywords)) return false;
+            if (!(props[idx].value >>= s.center_frequency_keywords)) {
+                CORBA::TypeCode_var typecode = props[idx].value.type();
+                if (typecode->kind() != CORBA::tk_null) {
+                    return false;
+                }
+            }
         }
         else if (!strcmp("enable_time_filtering", props[idx].id)) {
-            if (!(props[idx].value >>= s.enable_time_filtering)) return false;
+            if (!(props[idx].value >>= s.enable_time_filtering)) {
+                CORBA::TypeCode_var typecode = props[idx].value.type();
+                if (typecode->kind() != CORBA::tk_null) {
+                    return false;
+                }
+            }
         }
         else if (!strcmp("start_time", props[idx].id)) {
-            if (!(props[idx].value >>= s.start_time)) return false;
+            if (!(props[idx].value >>= s.start_time)) {
+                CORBA::TypeCode_var typecode = props[idx].value.type();
+                if (typecode->kind() != CORBA::tk_null) {
+                    return false;
+                }
+            }
         }
         else if (!strcmp("stop_time", props[idx].id)) {
-            if (!(props[idx].value >>= s.stop_time)) return false;
+            if (!(props[idx].value >>= s.stop_time)) {
+                CORBA::TypeCode_var typecode = props[idx].value.type();
+                if (typecode->kind() != CORBA::tk_null) {
+                    return false;
+                }
+            }
         }
     }
     return true;
@@ -233,19 +315,44 @@ inline bool operator>>= (const CORBA::Any& a, default_timestamp_struct& s) {
     CF::Properties& props = *temp;
     for (unsigned int idx = 0; idx < props.length(); idx++) {
         if (!strcmp("tcmode", props[idx].id)) {
-            if (!(props[idx].value >>= s.tcmode)) return false;
+            if (!(props[idx].value >>= s.tcmode)) {
+                CORBA::TypeCode_var typecode = props[idx].value.type();
+                if (typecode->kind() != CORBA::tk_null) {
+                    return false;
+                }
+            }
         }
         else if (!strcmp("tcstatus", props[idx].id)) {
-            if (!(props[idx].value >>= s.tcstatus)) return false;
+            if (!(props[idx].value >>= s.tcstatus)) {
+                CORBA::TypeCode_var typecode = props[idx].value.type();
+                if (typecode->kind() != CORBA::tk_null) {
+                    return false;
+                }
+            }
         }
         else if (!strcmp("toff", props[idx].id)) {
-            if (!(props[idx].value >>= s.toff)) return false;
+            if (!(props[idx].value >>= s.toff)) {
+                CORBA::TypeCode_var typecode = props[idx].value.type();
+                if (typecode->kind() != CORBA::tk_null) {
+                    return false;
+                }
+            }
         }
         else if (!strcmp("twsec", props[idx].id)) {
-            if (!(props[idx].value >>= s.twsec)) return false;
+            if (!(props[idx].value >>= s.twsec)) {
+                CORBA::TypeCode_var typecode = props[idx].value.type();
+                if (typecode->kind() != CORBA::tk_null) {
+                    return false;
+                }
+            }
         }
         else if (!strcmp("tfsec", props[idx].id)) {
-            if (!(props[idx].value >>= s.tfsec)) return false;
+            if (!(props[idx].value >>= s.tfsec)) {
+                CORBA::TypeCode_var typecode = props[idx].value.type();
+                if (typecode->kind() != CORBA::tk_null) {
+                    return false;
+                }
+            }
         }
     }
     return true;
@@ -324,37 +431,92 @@ inline bool operator>>= (const CORBA::Any& a, default_sri_struct& s) {
     CF::Properties& props = *temp;
     for (unsigned int idx = 0; idx < props.length(); idx++) {
         if (!strcmp("hversion", props[idx].id)) {
-            if (!(props[idx].value >>= s.hversion)) return false;
+            if (!(props[idx].value >>= s.hversion)) {
+                CORBA::TypeCode_var typecode = props[idx].value.type();
+                if (typecode->kind() != CORBA::tk_null) {
+                    return false;
+                }
+            }
         }
         else if (!strcmp("xstart", props[idx].id)) {
-            if (!(props[idx].value >>= s.xstart)) return false;
+            if (!(props[idx].value >>= s.xstart)) {
+                CORBA::TypeCode_var typecode = props[idx].value.type();
+                if (typecode->kind() != CORBA::tk_null) {
+                    return false;
+                }
+            }
         }
         else if (!strcmp("xdelta", props[idx].id)) {
-            if (!(props[idx].value >>= s.xdelta)) return false;
+            if (!(props[idx].value >>= s.xdelta)) {
+                CORBA::TypeCode_var typecode = props[idx].value.type();
+                if (typecode->kind() != CORBA::tk_null) {
+                    return false;
+                }
+            }
         }
         else if (!strcmp("xunits", props[idx].id)) {
-            if (!(props[idx].value >>= s.xunits)) return false;
+            if (!(props[idx].value >>= s.xunits)) {
+                CORBA::TypeCode_var typecode = props[idx].value.type();
+                if (typecode->kind() != CORBA::tk_null) {
+                    return false;
+                }
+            }
         }
         else if (!strcmp("subsize", props[idx].id)) {
-            if (!(props[idx].value >>= s.subsize)) return false;
+            if (!(props[idx].value >>= s.subsize)) {
+                CORBA::TypeCode_var typecode = props[idx].value.type();
+                if (typecode->kind() != CORBA::tk_null) {
+                    return false;
+                }
+            }
         }
         else if (!strcmp("ystart", props[idx].id)) {
-            if (!(props[idx].value >>= s.ystart)) return false;
+            if (!(props[idx].value >>= s.ystart)) {
+                CORBA::TypeCode_var typecode = props[idx].value.type();
+                if (typecode->kind() != CORBA::tk_null) {
+                    return false;
+                }
+            }
         }
         else if (!strcmp("ydelta", props[idx].id)) {
-            if (!(props[idx].value >>= s.ydelta)) return false;
+            if (!(props[idx].value >>= s.ydelta)) {
+                CORBA::TypeCode_var typecode = props[idx].value.type();
+                if (typecode->kind() != CORBA::tk_null) {
+                    return false;
+                }
+            }
         }
         else if (!strcmp("yunits", props[idx].id)) {
-            if (!(props[idx].value >>= s.yunits)) return false;
+            if (!(props[idx].value >>= s.yunits)) {
+                CORBA::TypeCode_var typecode = props[idx].value.type();
+                if (typecode->kind() != CORBA::tk_null) {
+                    return false;
+                }
+            }
         }
         else if (!strcmp("mode", props[idx].id)) {
-            if (!(props[idx].value >>= s.mode)) return false;
+            if (!(props[idx].value >>= s.mode)) {
+                CORBA::TypeCode_var typecode = props[idx].value.type();
+                if (typecode->kind() != CORBA::tk_null) {
+                    return false;
+                }
+            }
         }
         else if (!strcmp("blocking", props[idx].id)) {
-            if (!(props[idx].value >>= s.blocking)) return false;
+            if (!(props[idx].value >>= s.blocking)) {
+                CORBA::TypeCode_var typecode = props[idx].value.type();
+                if (typecode->kind() != CORBA::tk_null) {
+                    return false;
+                }
+            }
         }
         else if (!strcmp("streamID", props[idx].id)) {
-            if (!(props[idx].value >>= s.streamID)) return false;
+            if (!(props[idx].value >>= s.streamID)) {
+                CORBA::TypeCode_var typecode = props[idx].value.type();
+                if (typecode->kind() != CORBA::tk_null) {
+                    return false;
+                }
+            }
         }
     }
     return true;
@@ -422,6 +584,7 @@ struct component_status_struct {
     component_status_struct ()
     {
         estimated_output_rate_Bps = 0;
+        domain_name = "(domainless)";
     };
 
     static std::string getId() {
@@ -429,6 +592,7 @@ struct component_status_struct {
     };
 
     CORBA::Long estimated_output_rate_Bps;
+    std::string domain_name;
 };
 
 inline bool operator>>= (const CORBA::Any& a, component_status_struct& s) {
@@ -437,7 +601,20 @@ inline bool operator>>= (const CORBA::Any& a, component_status_struct& s) {
     CF::Properties& props = *temp;
     for (unsigned int idx = 0; idx < props.length(); idx++) {
         if (!strcmp("estimated_output_rate_Bps", props[idx].id)) {
-            if (!(props[idx].value >>= s.estimated_output_rate_Bps)) return false;
+            if (!(props[idx].value >>= s.estimated_output_rate_Bps)) {
+                CORBA::TypeCode_var typecode = props[idx].value.type();
+                if (typecode->kind() != CORBA::tk_null) {
+                    return false;
+                }
+            }
+        }
+        else if (!strcmp("domain_name", props[idx].id)) {
+            if (!(props[idx].value >>= s.domain_name)) {
+                CORBA::TypeCode_var typecode = props[idx].value.type();
+                if (typecode->kind() != CORBA::tk_null) {
+                    return false;
+                }
+            }
         }
     }
     return true;
@@ -445,14 +622,18 @@ inline bool operator>>= (const CORBA::Any& a, component_status_struct& s) {
 
 inline void operator<<= (CORBA::Any& a, const component_status_struct& s) {
     CF::Properties props;
-    props.length(1);
+    props.length(2);
     props[0].id = CORBA::string_dup("estimated_output_rate_Bps");
     props[0].value <<= s.estimated_output_rate_Bps;
+    props[1].id = CORBA::string_dup("domain_name");
+    props[1].value <<= s.domain_name;
     a <<= props;
 };
 
 inline bool operator== (const component_status_struct& s1, const component_status_struct& s2) {
     if (s1.estimated_output_rate_Bps!=s2.estimated_output_rate_Bps)
+        return false;
+    if (s1.domain_name!=s2.domain_name)
         return false;
     return true;
 };
@@ -482,13 +663,28 @@ inline bool operator>>= (const CORBA::Any& a, sri_keywords_struct_struct& s) {
     CF::Properties& props = *temp;
     for (unsigned int idx = 0; idx < props.length(); idx++) {
         if (!strcmp("id", props[idx].id)) {
-            if (!(props[idx].value >>= s.id)) return false;
+            if (!(props[idx].value >>= s.id)) {
+                CORBA::TypeCode_var typecode = props[idx].value.type();
+                if (typecode->kind() != CORBA::tk_null) {
+                    return false;
+                }
+            }
         }
         else if (!strcmp("value", props[idx].id)) {
-            if (!(props[idx].value >>= s.value)) return false;
+            if (!(props[idx].value >>= s.value)) {
+                CORBA::TypeCode_var typecode = props[idx].value.type();
+                if (typecode->kind() != CORBA::tk_null) {
+                    return false;
+                }
+            }
         }
         else if (!strcmp("value_type", props[idx].id)) {
-            if (!(props[idx].value >>= s.value_type)) return false;
+            if (!(props[idx].value >>= s.value_type)) {
+                CORBA::TypeCode_var typecode = props[idx].value.type();
+                if (typecode->kind() != CORBA::tk_null) {
+                    return false;
+                }
+            }
         }
     }
     return true;
@@ -543,22 +739,52 @@ inline bool operator>>= (const CORBA::Any& a, file_status_struct_struct& s) {
     CF::Properties& props = *temp;
     for (unsigned int idx = 0; idx < props.length(); idx++) {
         if (!strcmp("DCE:b6256a27-33fd-41f4-b302-943a41a35cd3", props[idx].id)) {
-            if (!(props[idx].value >>= s.filename)) return false;
+            if (!(props[idx].value >>= s.filename)) {
+                CORBA::TypeCode_var typecode = props[idx].value.type();
+                if (typecode->kind() != CORBA::tk_null) {
+                    return false;
+                }
+            }
         }
         else if (!strcmp("DCE:4baa9718-1f21-4f46-865c-aec82b00df91", props[idx].id)) {
-            if (!(props[idx].value >>= s.file_basename)) return false;
+            if (!(props[idx].value >>= s.file_basename)) {
+                CORBA::TypeCode_var typecode = props[idx].value.type();
+                if (typecode->kind() != CORBA::tk_null) {
+                    return false;
+                }
+            }
         }
         else if (!strcmp("DCE:13fd6762-6b17-4a94-a594-9a492e804382", props[idx].id)) {
-            if (!(props[idx].value >>= s.file_size)) return false;
+            if (!(props[idx].value >>= s.file_size)) {
+                CORBA::TypeCode_var typecode = props[idx].value.type();
+                if (typecode->kind() != CORBA::tk_null) {
+                    return false;
+                }
+            }
         }
         else if (!strcmp("DCE:6fb595e7-de50-4e17-b5e7-c4b8d87de624", props[idx].id)) {
-            if (!(props[idx].value >>= s.filesystem_type)) return false;
+            if (!(props[idx].value >>= s.filesystem_type)) {
+                CORBA::TypeCode_var typecode = props[idx].value.type();
+                if (typecode->kind() != CORBA::tk_null) {
+                    return false;
+                }
+            }
         }
         else if (!strcmp("DCE:addfe635-bbef-4c9d-83c2-03dd149a3b49", props[idx].id)) {
-            if (!(props[idx].value >>= s.format)) return false;
+            if (!(props[idx].value >>= s.format)) {
+                CORBA::TypeCode_var typecode = props[idx].value.type();
+                if (typecode->kind() != CORBA::tk_null) {
+                    return false;
+                }
+            }
         }
         else if (!strcmp("DCE:ebc0a4de-958f-4785-bbe4-03693c34f879", props[idx].id)) {
-            if (!(props[idx].value >>= s.error_msg)) return false;
+            if (!(props[idx].value >>= s.error_msg)) {
+                CORBA::TypeCode_var typecode = props[idx].value.type();
+                if (typecode->kind() != CORBA::tk_null) {
+                    return false;
+                }
+            }
         }
     }
     return true;
@@ -602,5 +828,4 @@ inline bool operator!= (const file_status_struct_struct& s1, const file_status_s
     return !(s1==s2);
 };
 
-
-#endif
+#endif // STRUCTPROPS_H

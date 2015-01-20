@@ -38,8 +38,8 @@ import struct
 from math import isnan
 
 class ResourceTests(ossie.utils.testing.ScaComponentTestCase):
-    
     """Test for all resource implementations in FileReader"""
+
     def testScaBasicBehavior(self):
         #######################################################################
         # Launch the resource with the default execparams
@@ -572,7 +572,12 @@ class ResourceTests(ossie.utils.testing.ScaComponentTestCase):
         
         print "........ PASSED\n"
         return
+    # TODO Add additional tests here
+    #
+    # See:
+    #   ossie.utils.bulkio.bulkio_helpers,
+    #   ossie.utils.bluefile.bluefile_helpers
+    # for modules that will assist with testing resource with BULKIO ports
 
 if __name__ == "__main__":
-    
     ossie.utils.testing.main("../FileReader.spd.xml") # By default tests all implementations

@@ -22,6 +22,7 @@ bin_PROGRAMS = FileReader
 
 xmldir = $(prefix)/dom/components/FileReader/
 dist_xml_DATA = ../FileReader.scd.xml ../FileReader.prf.xml ../FileReader.spd.xml
+ACLOCAL_AMFLAGS = -I$(OSSIEHOME)/share/aclocal/ossie
 
 
 distclean-local:
