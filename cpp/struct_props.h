@@ -583,7 +583,7 @@ inline bool operator!= (const default_sri_struct& s1, const default_sri_struct& 
 struct component_status_struct {
     component_status_struct ()
     {
-        estimated_output_rate_Bps = 0;
+        estimated_output_rate = 0;
         domain_name = "(domainless)";
     };
 
@@ -591,7 +591,7 @@ struct component_status_struct {
         return std::string("component_status");
     };
 
-    CORBA::Long estimated_output_rate_Bps;
+    CORBA::Long estimated_output_rate;
     std::string domain_name;
 };
 
@@ -600,8 +600,8 @@ inline bool operator>>= (const CORBA::Any& a, component_status_struct& s) {
     if (!(a >>= temp)) return false;
     CF::Properties& props = *temp;
     for (unsigned int idx = 0; idx < props.length(); idx++) {
-        if (!strcmp("estimated_output_rate_Bps", props[idx].id)) {
-            if (!(props[idx].value >>= s.estimated_output_rate_Bps)) {
+        if (!strcmp("estimated_output_rate", props[idx].id)) {
+            if (!(props[idx].value >>= s.estimated_output_rate)) {
                 CORBA::TypeCode_var typecode = props[idx].value.type();
                 if (typecode->kind() != CORBA::tk_null) {
                     return false;
@@ -623,15 +623,15 @@ inline bool operator>>= (const CORBA::Any& a, component_status_struct& s) {
 inline void operator<<= (CORBA::Any& a, const component_status_struct& s) {
     CF::Properties props;
     props.length(2);
-    props[0].id = CORBA::string_dup("estimated_output_rate_Bps");
-    props[0].value <<= s.estimated_output_rate_Bps;
+    props[0].id = CORBA::string_dup("estimated_output_rate");
+    props[0].value <<= s.estimated_output_rate;
     props[1].id = CORBA::string_dup("domain_name");
     props[1].value <<= s.domain_name;
     a <<= props;
 };
 
 inline bool operator== (const component_status_struct& s1, const component_status_struct& s2) {
-    if (s1.estimated_output_rate_Bps!=s2.estimated_output_rate_Bps)
+    if (s1.estimated_output_rate!=s2.estimated_output_rate)
         return false;
     if (s1.domain_name!=s2.domain_name)
         return false;

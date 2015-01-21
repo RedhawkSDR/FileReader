@@ -510,7 +510,7 @@ This stream identifier is for the SRI structure sent by pushSRI(). This file sho
   </structsequence>
   <struct id="component_status" mode="readonly" name="component_status">
     <description>The status of the component.</description>
-    <simple id="estimated_output_rate_Bps" mode="readonly" name="estimated_output_rate_Bps" type="long">
+    <simple id="estimated_output_rate" mode="readonly" name="estimated_output_rate" type="long">
       <description>The refresh rate of this property will be affected when viewing via the IDE.</description>
       <value>0</value>
       <units>Bps </units>

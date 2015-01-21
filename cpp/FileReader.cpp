@@ -1159,13 +1159,13 @@ int FileReader_i::serviceFunction() {
             
             // Update sleep amount
             double timeDiff_from_last_pkt = get_timestamp_difference(throttle_tstamp, get_current_timestamp());
-            component_status.estimated_output_rate_Bps = long(double(sent_bytes) / timeDiff_from_last_pkt);
+            component_status.estimated_output_rate = long(double(sent_bytes) / timeDiff_from_last_pkt);
             // need a minimum value for usleep becasue if it gets to 0, it will never be able to recover until the next file starts to play
-            throttle_usleep = std::max(size_t(10), size_t(double(throttle_usleep) * component_status.estimated_output_rate_Bps / double(throttle_rate_Bps)));
+            throttle_usleep = std::max(size_t(10), size_t(double(throttle_usleep) * component_status.estimated_output_rate / double(throttle_rate_Bps)));
             throttle_tstamp = get_current_timestamp();
             if (advanced_properties.debug_output) {
                 std::cout << __PRETTY_FUNCTION__ << " output stats:: Throttle rate (Bps): " << throttle_rate_Bps << ", Throttle usleep: " << throttle_usleep <<
-                        ", Seconds since last Tx: " << timeDiff_from_last_pkt << ", Estimated Rate (Bps) : " << component_status.estimated_output_rate_Bps << std::endl;
+                        ", Seconds since last Tx: " << timeDiff_from_last_pkt << ", Estimated Rate (Bps) : " << component_status.estimated_output_rate << std::endl;
             }
         }
     }
