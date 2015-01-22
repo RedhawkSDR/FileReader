@@ -38,8 +38,6 @@
 #include <omniORB4/CORBA.h>
 #include <omniORB4/omniURI.h>
 #include <omniORB4/omniORB.h>
-//#include <BULKIO/bulkioDataTypes.h>
-#include "boost/thread.hpp"
 #include <iostream>
 #include <ctime>
 #include <sys/types.h>
@@ -53,15 +51,14 @@
 #include <boost/make_shared.hpp>
 #include <boost/thread/thread.hpp>
 #include <boost/thread/mutex.hpp>
-#include <stdio.h>
-#include <stdlib.h>
 
 #include <blue/HeaderControlBlock.h>
 #include <blue/ExtendedHeader.h>
 #include <abstracted_file_io.h>
+#include <byte_swap.h>
+
 #include <data_type_descriptor.h>
 #include <dataTypeTransform.h>
-#include <byte_swap.h>
 #include <vectorMagic.h>
 #include <rh_utils.h>
 #include "Queue.hpp"
@@ -192,9 +189,6 @@ struct loop_info{
 	std::string stream_id;
 	BULKIO::PrecisionUTCTime tstamp;
 };
-
-
-class FileReader_i;
 
 class FileReader_i : public FileReader_base {
 	ENABLE_LOGGING
