@@ -56,8 +56,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <HeaderControlBlock.h>
-#include <ExtendedHeader.h>
+#include <blue/HeaderControlBlock.h>
+#include <blue/ExtendedHeader.h>
 #include <abstracted_file_io.h>
 #include <data_type_descriptor.h>
 #include <dataTypeTransform.h>
