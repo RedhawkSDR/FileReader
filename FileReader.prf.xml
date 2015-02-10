@@ -1,105 +1,133 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+ This file is protected by Copyright. Please refer to the COPYRIGHT file
+ distributed with this source distribution.
+ 
+ This file is part of REDHAWK Basic Components FileReader.
+ 
+ REDHAWK Basic Components FileReader is free software: you can redistribute it and/or modify it
+ under the terms of the GNU General Public License as published by the
+ Free Software Foundation, either version 3 of the License, or (at your
+ option) any later version.
+ 
+ REDHAWK Basic Components FileReader is distributed in the hope that it will be useful, but WITHOUT
+ ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ for more details.
+ 
+ You should have received a copy of the GNU General Public License
+ along with this program.  If not, see http://www.gnu.org/licenses/.
+-->
 <!DOCTYPE properties PUBLIC "-//JTRS//DTD SCA V2.2.2 PRF//EN" "properties.dtd">
 <properties>
   <struct id="advanced_properties" mode="readwrite" name="advanced_properties">
+    <description>Properties to alter advanced behavior.</description>
     <simple id="debug_output" mode="readwrite" name="debug_output" type="boolean">
-      <description>This will enable additional debug output. Includes debug outputs for pushPacket's, pushSRI's, and throttling</description>
+      <description>This will enable additional debug output. Includes debug outputs for pushing packets and SRI, as well as for throttling data. </description>
       <value>false</value>
       <kind kindtype="configure"/>
       <action type="external"/>
     </simple>
     <simple id="packet_size" mode="readwrite" name="packet_size" type="string">
-      <description>If packet size &lt;= 0, then size will be automatically determined.
+      <description>If packet size &lt;= 0, then the size will be automatically determined.
 
 Allowed Units:
 [None = Bytes]
 KB (1024 Bytes)
 MB (1024^2 Bytes)
 GB (1024^3 Bytes)
-NOTE: 512B are reserved for push packet header
 
-
-</description>
+Note that 512B are reserved for the push packet header.</description>
       <value>0</value>
       <kind kindtype="configure"/>
       <action type="external"/>
     </simple>
     <simple id="buffer_size" mode="readwrite" name="buffer_size" type="string">
+      <description>The size of the internal buffer used for storing the packets read from the files.
+
+Allowed Units:
+[None = Bytes]
+KB (1024 Bytes)
+MB (1024^2 Bytes)
+GB (1024^3 Bytes)</description>
       <value>20MB</value>
       <kind kindtype="configure"/>
       <action type="external"/>
     </simple>
     <simple id="looping" mode="readwrite" name="looping" type="boolean">
+      <description>When true, the file will be read and its data pushed repeatedly until explicitly stopped.</description>
       <value>false</value>
       <kind kindtype="configure"/>
       <action type="external"/>
     </simple>
     <simple id="looping_suppress_eos_until_stop" mode="readwrite" name="looping_suppress_eos_until_stop" type="boolean">
+      <description>When true, the EOS is only sent when the playback is explicitly stopped.  Otherwise, the EOS will be sent each time the file is finished.  This property only applies when looping is enabled.</description>
       <value>true</value>
       <kind kindtype="configure"/>
       <action type="external"/>
     </simple>
     <simple id="transition_time" mode="readwrite" name="transition_time" type="long">
-      <description>Time to sleep between loops or files</description>
+      <description>Time to sleep between playback of loops or files.</description>
       <value>0</value>
       <units>ms</units>
       <kind kindtype="configure"/>
       <action type="external"/>
     </simple>
     <simple id="throttle_rate" mode="readwrite" name="throttle_rate" type="string">
-      <description>%SAMPLE_RATE% is a reserved string. These will be replaced by the Byte equivalent (in Bps) of the sample rate. If throttle_rate is &lt;= 0, throttling will be disabled
+      <description>%SAMPLE_RATE% is a reserved string. These will be replaced by the Byte equivalent (in Bps) of the sample rate. If throttle_rate is &lt;= 0, throttling will be disabled.
 
-Allowed Units --
+Allowed Units:
 [None = Bps]
 Bps
 KBps (= 1024 Bps)
 MBps (= 1024^2 Bps)
 GBps (= 1024^3 Bps)
 
-NOTE: This rate provides an approximate (NOT exact) rate out of the data port. Data processing (type conversion/byteswapping) may slow down output. </description>
+Note that this rate provides an approximate rate out of the data port. Data processing (type conversion/byteswapping) may slow down output. </description>
       <value>%SAMPLE_RATE%</value>
       <kind kindtype="configure"/>
       <action type="external"/>
     </simple>
     <simple id="ignore_header_metadata" mode="readwrite" name="ignore_header_metadata" type="boolean">
-      <description>NOTE:: Only applies when playing back files with headers (ie - bluefile/wav)
+      <description>When ignore_header_metadata is enabled, the data player will always use its values for default_sri, default_sri_keywords, and default_timestamp and ignore what is parsed from the file header.
 
-When ignore_header_metadata is enabled, the data player will always use its values for default_sri, default_sri_keywords, and default_timestamp and IGNORE what is parsed from the file header.</description>
+Note that this property only applies when playing back files with headers (i.e. bluefile and wav).</description>
       <value>false</value>
       <kind kindtype="configure"/>
       <action type="external"/>
     </simple>
     <simple id="append_default_sri_keywords" mode="readwrite" name="append_default_sri_keywords" type="boolean">
-      <description>NOTE:: Only applies when playing back files with headers (ie - bluefile/wav)
+      <description>When append_default_sri_keywords is enabled, the default_sri_keywords will be added to whatever keywords that may be extracted from the file header.
 
-When append_default_sri_keywords is enabled, the default_sri_keywords will be added to whatever keywords that may be extracted from the file header</description>
+Note that this property only applies when playing back files with headers (i.e. bluefile and wav).</description>
       <value>false</value>
       <kind kindtype="configure"/>
       <action type="external"/>
     </simple>
     <simple id="data_conversion_normalization" mode="readwrite" name="data_conversion_normalization" type="boolean">
-      <description>When converting to/from floating point values, always assume normalization where floating point range is [-1,1]</description>
+      <description>When converting to/from floating point values, always assume normalization where to the floating point range of [-1,1], when enabled.</description>
       <value>true</value>
       <kind kindtype="configure"/>
       <action type="external"/>
     </simple>
     <simple id="data_type_conversion" mode="readwrite" name="data_type_conversion" type="boolean">
-      <description>If true, data types are converted based off of the BULKIO connection type to the uber port. 
+      <description>If true, data types are converted based on the BULKIO connection type to the uber port. 
 If false, data is only casted to that type (output might not be correct). </description>
       <value>true</value>
       <kind kindtype="configure"/>
       <action type="external"/>
     </simple>
     <simple id="max_sleep_time" mode="readwrite" name="max_sleep_time" type="double">
-      <description>Maximum amount of time to sleep when throttling. This provides a limitation in-case of incorrect parameters with unanticipated functionality.
-For example, if you are trying to throttle to a bit rate of 1KB/s but are using a packet size of 2MB, your estimated amount of sleep time between pushPackets would be 2000s which might not be desired.
-      </description>
+      <description>Maximum amount of time to sleep when throttling. This provides a limitation in case of incorrect parameters with unanticipated functionality.
+
+For example, if you are trying to throttle to a bit rate of 1KB/s but are using a packet size of 2MB, your estimated amount of sleep time between pushPackets would be 2000s which might not be desired.</description>
       <value>5.0</value>
       <units>s</units>
       <kind kindtype="configure"/>
       <action type="external"/>
     </simple>
-    <simple id="center_frequency_keywords" type="short">
+    <simple id="center_frequency_keywords" name="center_frequency_keywords" type="short">
+      <description>Select which SRI keywords will be included.</description>
       <value>0</value>
       <enumerations>
         <enumeration label="COL_RF AND CHAN_RF" value="0"/>
@@ -108,23 +136,23 @@ For example, if you are trying to throttle to a bit rate of 1KB/s but are using 
         <enumeration label="NO KEYWORDS" value="-1"/>
       </enumerations>
     </simple>
-    <simple id="enable_time_filtering" mode="readwrite" type="boolean">
-      <description>When enabled, only the portion of the file within [start_time, stop_time] will be played back</description>
+    <simple id="enable_time_filtering" mode="readwrite" name="enable_time_filtering" type="boolean">
+      <description>When enabled, only the portion of the file within [start_time, stop_time] will be played.</description>
       <value>false</value>
       <kind kindtype="configure"/>
       <action type="external"/>
     </simple>
-    <simple id="start_time" mode="readwrite" type="double">
+    <simple id="start_time" mode="readwrite" name="start_time" type="double">
       <description>Time in seconds (relative to the beginning of the file) for which to start playing data from the file. If the value is negative, the beginning of the file is used.
-enable_time_filtering must be set to 'true' for this property to have an effect</description>
+enable_time_filtering must be set to 'true' for this property to have an effect.</description>
       <value>0.0</value>
       <units>Seconds</units>
       <kind kindtype="configure"/>
       <action type="external"/>
     </simple>
-    <simple id="stop_time" mode="readwrite" type="double">
+    <simple id="stop_time" mode="readwrite" name="stop_time" type="double">
       <description>Time in seconds (relative to the beginning of the file) for which to stop playing data from the file. If the value is negative, the entire file will be used.
-enable_time_filtering must be set to 'true' for this property to have an effect</description>
+enable_time_filtering must be set to 'true' for this property to have an effect.</description>
       <value>-1.0</value>
       <units>Seconds</units>
       <kind kindtype="configure"/>
@@ -133,15 +161,17 @@ enable_time_filtering must be set to 'true' for this property to have an effect<
     <configurationkind kindtype="configure"/>
   </struct>
   <simple id="source_uri" mode="readwrite" name="source_uri" type="string">
-    <description>URI accepted prefix's:
+    <description>The path to the file to be read.
+
+URI accepted prefixes:
 file://	Local Filesystem
-sca:// 	SCA Filesystem (path relative to SDRROOT/dom)
-</description>
+sca:// 	SCA Filesystem (path relative to SDRROOT/dom)</description>
     <value>file://[path_to_local_file_or_dir] OR sca://[path_to_sca_file_or_dir]</value>
     <kind kindtype="configure"/>
     <action type="external"/>
   </simple>
   <simple id="file_format" mode="readwrite" name="file_format" type="string">
+    <description>The format of the data found in the file to be read.</description>
     <value>SHORT</value>
     <enumerations>
       <enumeration label="BLUE/PLATINUM FILE" value="BLUEFILE"/>
@@ -180,26 +210,31 @@ sca:// 	SCA Filesystem (path relative to SDRROOT/dom)
     <action type="external"/>
   </simple>
   <simple id="sample_rate" mode="readwrite" name="sample_rate" type="string">
-    <description>Allowed Units -- Default to [sps]
-sps
-Ksps (= 1e3 sps)
-Msps (= 1e6 sps)
-Gsps (= 1e9 sps)</description>
+    <description>The sample rate at which the data was originally sampled.
+
+Allowed Units:
+[None = sps]
+Ksps (1e3 sps)
+Msps (1e6 sps)
+Gsps (1e9 sps)</description>
     <value>25Msps</value>
     <kind kindtype="configure"/>
     <action type="external"/>
   </simple>
   <simple id="center_frequency" mode="readwrite" name="center_frequency" type="string">
-    <description>Allowed Units -- Default to [Hz]
-Hz
-KHz (= 1e3 Hz)
-MHz (= 1e6 Hz)
-GHz (= 1e9 Hz)</description>
+    <description>The center frequency for use in keywords.
+
+Allowed Units:
+[None = Hz]
+KHz (1e3 Hz)
+MHz (1e6 Hz)
+GHz (1e9 Hz)</description>
     <value>0.0</value>
     <kind kindtype="configure"/>
     <action type="external"/>
   </simple>
   <simple id="playback_state" mode="readwrite" name="playback_state" type="string">
+    <description>The current mode of playback.</description>
     <value>STOP</value>
     <enumerations>
       <enumeration label="STOP" value="STOP"/>
@@ -212,6 +247,7 @@ GHz (= 1e9 Hz)</description>
   <struct id="default_timestamp" mode="readwrite" name="default_timestamp">
     <description>Optional default timstamp. If default_timestamp/tcmode == -1, system timestamp is used. </description>
     <simple id="tcmode" mode="readwrite" name="tcmode" type="short">
+      <description>The timestamp mode.</description>
       <value>-1</value>
       <enumerations>
         <enumeration label="TCM_OFF" value="0"/>
@@ -228,6 +264,7 @@ GHz (= 1e9 Hz)</description>
       <action type="external"/>
     </simple>
     <simple id="tcstatus" mode="readwrite" name="tcstatus" type="short">
+      <description>The timestamp status.</description>
       <value>0</value>
       <enumerations>
         <enumeration label="TCS_INVALID" value="0"/>
@@ -237,16 +274,19 @@ GHz (= 1e9 Hz)</description>
       <action type="eq"/>
     </simple>
     <simple id="toff" mode="readwrite" name="toff" type="double">
+      <description>The timestamp offset.</description>
       <value>0</value>
       <kind kindtype="configure"/>
       <action type="external"/>
     </simple>
     <simple id="twsec" mode="readwrite" name="twsec" type="double">
+      <description>The whole second part of the timestamp.</description>
       <value>0</value>
       <kind kindtype="configure"/>
       <action type="external"/>
     </simple>
     <simple id="tfsec" mode="readwrite" name="tfsec" type="double">
+      <description>The fractional second part of the timestamp.</description>
       <value>0</value>
       <kind kindtype="configure"/>
       <action type="external"/>
@@ -254,15 +294,15 @@ GHz (= 1e9 Hz)</description>
     <configurationkind kindtype="configure"/>
   </struct>
   <struct id="default_sri" mode="readwrite" name="default_sri">
-    <description>Default SRI (signal related information). May be ignored when SRI information is parsed from file header (overrides available in advanced properties)</description>
+    <description>The default SRI to be used. May be ignored when SRI information is parsed from the file header.  Overrides for this are available in advanced properties.</description>
     <simple id="hversion" mode="readwrite" name="hversion" type="long">
-      <description>Version of the StreamSRI header</description>
+      <description>Version of the StreamSRI header.</description>
       <value>1</value>
       <kind kindtype="configure"/>
       <action type="external"/>
     </simple>
     <simple id="xstart" mode="readwrite" name="xstart" type="double">
-      <description>Start time of the stream</description>
+      <description>Start of the stream.</description>
       <value>0.0</value>
       <kind kindtype="configure"/>
       <action type="external"/>
@@ -276,64 +316,96 @@ If this value is =&lt; 0, then xdelta will be automatically calculated based on 
       <action type="external"/>
     </simple>
     <simple id="xunits" mode="readwrite" name="xunits" type="short">
-      <description>UNITS_NONE         = 0;  /* None / Not Applicable (N/A) */
-UNITS_TIME         = 1;  /* Time (sec) */
-UNITS_DELAY        = 2;  /* Delay (sec) */
-UNITS_FREQUENCY    = 3;  /* Frequency (Hz) */
-UNITS_TIMECODE     = 4;  /* Time code format */
-UNITS_DISTANCE     = 5;  /* Distance (m) */
-UNITS_VELOCITY     = 6;  /* Velocity (m/sec) */
-UNITS_ACCELERATION = 7;  /* Acceleration (m/sec^2) */
-UNITS_JERK         = 8;  /* Jerk (m/sec^3) */
-UNITS_DOPPLER      = 9;  /* Doppler (Hz) */
-UNITS_DOPPLERRATE  = 10; /* Doppler rate (Hz/sec) */
-UNITS_ENERGY       = 11; /* Energy (J) */
-UNITS_POWER        = 12; /* Power (W) */
-UNITS_MASS         = 13; /* Mass (g) */
-</description>
+      <description>UNITS_NONE
+UNITS_TIME (sec)
+UNITS_DELAY (sec) 
+UNITS_FREQUENCY (Hz)
+UNITS_TIMECODE (Time code format)
+UNITS_DISTANCE (m)
+UNITS_VELOCITY (m/sec)
+UNITS_ACCELERATION (m/sec^2)
+UNITS_JERK (m/sec^3)
+UNITS_DOPPLER (Hz)
+UNITS_DOPPLERRATE (Hz/sec)
+UNITS_ENERGY (Joules)
+UNITS_POWER (Watts)
+UNITS_MASS (grams)</description>
       <value>1</value>
+      <enumerations>
+        <enumeration label="UNITS_NONE" value="0"/>
+        <enumeration label="UNITS_TIME" value="1"/>
+        <enumeration label="UNITS_DELAY" value="2"/>
+        <enumeration label="UNITS_FREQUENCY" value="3"/>
+        <enumeration label="UNITS_TIMECODE" value="4"/>
+        <enumeration label="UNITS_DISTANCE" value="5"/>
+        <enumeration label="UNITS_VELOCITY" value="6"/>
+        <enumeration label="UNITS_ACCELERATION" value="7"/>
+        <enumeration label="UNITS_JERK" value="8"/>
+        <enumeration label="UNITS_DOPPLER" value="9"/>
+        <enumeration label="UNITS_DOPPLERRATE" value="10"/>
+        <enumeration label="UNITS_ENERGY" value="11"/>
+        <enumeration label="UNITS_POWER" value="12"/>
+        <enumeration label="UNITS_MASS" value="13"/>
+      </enumerations>
       <kind kindtype="configure"/>
       <action type="external"/>
     </simple>
     <simple id="subsize" mode="readwrite" name="subsize" type="long">
-      <description>0 if the data is one dimensional; > 0 if two dimensional</description>
+      <description>0 if the data is one dimensional. Greater than 0 if two dimensional.</description>
       <value>0</value>
       <kind kindtype="configure"/>
       <action type="external"/>
     </simple>
     <simple id="ystart" mode="readwrite" name="ystart" type="double">
-      <description>start of second dimension</description>
+      <description>Start of second dimension stream.</description>
       <value>0.0</value>
       <kind kindtype="configure"/>
       <action type="external"/>
     </simple>
     <simple id="ydelta" mode="readwrite" name="ydelta" type="double">
-      <description>delta between two samples of second dimension</description>
+      <description>Delta between two samples of second dimension.</description>
       <value>0.0</value>
       <kind kindtype="configure"/>
       <action type="external"/>
     </simple>
     <simple id="yunits" mode="readwrite" name="yunits" type="short">
-      <description>UNITS_NONE         = 0;  /* None / Not Applicable (N/A) */
-UNITS_TIME         = 1;  /* Time (sec) */
-UNITS_DELAY        = 2;  /* Delay (sec) */
-UNITS_FREQUENCY    = 3;  /* Frequency (Hz) */
-UNITS_TIMECODE     = 4;  /* Time code format */
-UNITS_DISTANCE     = 5;  /* Distance (m) */
-UNITS_VELOCITY     = 6;  /* Velocity (m/sec) */
-UNITS_ACCELERATION = 7;  /* Acceleration (m/sec^2) */
-UNITS_JERK         = 8;  /* Jerk (m/sec^3) */
-UNITS_DOPPLER      = 9;  /* Doppler (Hz) */
-UNITS_DOPPLERRATE  = 10; /* Doppler rate (Hz/sec) */
-UNITS_ENERGY       = 11; /* Energy (J) */
-UNITS_POWER        = 12; /* Power (W) */
-UNITS_MASS         = 13; /* Mass (g) */
-</description>
+      <description>NITS_NONE
+UNITS_TIME (sec)
+UNITS_DELAY (sec) 
+UNITS_FREQUENCY (Hz)
+UNITS_TIMECODE (Time code format)
+UNITS_DISTANCE (m)
+UNITS_VELOCITY (m/sec)
+UNITS_ACCELERATION (m/sec^2)
+UNITS_JERK (m/sec^3)
+UNITS_DOPPLER (Hz)
+UNITS_DOPPLERRATE (Hz/sec)
+UNITS_ENERGY (Joules)
+UNITS_POWER (Watts)
+UNITS_MASS (grams)</description>
       <value>1</value>
+      <enumerations>
+        <enumeration label="UNITS_NONE" value="0"/>
+        <enumeration label="UNITS_TIME" value="1"/>
+        <enumeration label="UNITS_DELAY" value="2"/>
+        <enumeration label="UNITS_FREQUENCY" value="3"/>
+        <enumeration label="UNITS_TIMECODE" value="4"/>
+        <enumeration label="UNITS_DISTANCE" value="5"/>
+        <enumeration label="UNITS_VELOCITY" value="6"/>
+        <enumeration label="UNITS_ACCELERATION" value="7"/>
+        <enumeration label="UNITS_JERK" value="8"/>
+        <enumeration label="UNITS_DOPPLER" value="9"/>
+        <enumeration label="UNITS_DOPPLERRATE" value="10"/>
+        <enumeration label="UNITS_ENERGY" value="11"/>
+        <enumeration label="UNITS_POWER" value="12"/>
+        <enumeration label="UNITS_MASS" value="13"/>
+      </enumerations>
       <kind kindtype="configure"/>
     </simple>
     <simple id="mode" mode="readwrite" name="mode" type="short">
-      <description>-1 = Automatically determined by value of &quot;data_type&quot; property
+      <description>Real or complex data.
+
+-1 = Automatically determined by value of &quot;data_type&quot; property
 0 = Scalar
 1 = Complex </description>
       <value>-1</value>
@@ -345,6 +417,7 @@ UNITS_MASS         = 13; /* Mass (g) */
       <kind kindtype="configure"/>
     </simple>
     <simple id="blocking" mode="readwrite" type="boolean">
+      <description>When enabled, block on the pushpacket call when the receiving component's queue is full.</description>
       <value>true</value>
       <kind kindtype="configure"/>
       <action type="external"/>
@@ -352,23 +425,27 @@ UNITS_MASS         = 13; /* Mass (g) */
     <simple id="streamID" mode="readwrite" name="streamID" type="string">
       <description>%FILE_BASENAME% is a reserved string. This will be replaced by the basename of the file currently being read.
 
-This stream identifier is for the SRI structure sent by pushSRI(). This file *should* correlate to the same stream_id sent with the data. </description>
+This stream identifier is for the SRI structure sent by pushSRI(). This file should correlate to the same stream_id sent with the data. </description>
       <value>%FILE_BASENAME%</value>
       <kind kindtype="configure"/>
     </simple>
   </struct>
   <structsequence id="default_sri_keywords" mode="readwrite" name="default_sri_keywords">
-    <description>Optional SRI keywords. Additonal keyword overrides available in advanced properties.</description>
+    <description>Optional SRI keywords. Additonal keyword overrides are available in advanced properties.</description>
     <struct id="sri_keywords_struct" mode="readwrite" name="sri_keywords_struct">
+      <description>The structure representing an SRI keyword.</description>
       <simple id="id" mode="readwrite" name="id" type="string">
+        <description>The ID of the SRI keyword.</description>
         <kind kindtype="configure"/>
         <action type="external"/>
       </simple>
       <simple id="value" mode="readwrite" name="value" type="string">
+        <description>The value of the SRI keyword.</description>
         <kind kindtype="configure"/>
         <action type="external"/>
       </simple>
       <simple id="value_type" mode="readwrite" name="value_type" type="string">
+        <description>The data type of the value of the SRI keyword.</description>
         <value>STRING</value>
         <enumerations>
           <enumeration label="STRING" value="STRING"/>
@@ -389,19 +466,21 @@ This stream identifier is for the SRI structure sent by pushSRI(). This file *sh
     <configurationkind kindtype="configure"/>
   </structsequence>
   <structsequence id="file_status" mode="readonly" name="file_status">
-    <description>Read-only status for files available for playback.</description>
+    <description>Read-only status of files available for playback.</description>
     <struct id="file_status_struct" mode="readonly" name="file_status_struct">
+      <description>The structure representing a file status.</description>
       <simple id="DCE:b6256a27-33fd-41f4-b302-943a41a35cd3" mode="readonly" name="filename" type="string">
-        <description>Full path filename. Inlcudes URI prefix.</description>
+        <description>Full path filename, inlcuding the URI prefix.</description>
         <kind kindtype="configure"/>
         <action type="external"/>
       </simple>
       <simple id="DCE:4baa9718-1f21-4f46-865c-aec82b00df91" mode="readonly" name="file_basename" type="string">
-        <description>File Basename</description>
+        <description>The filename without the path and URI prefix.</description>
         <kind kindtype="configure"/>
         <action type="external"/>
       </simple>
       <simple id="DCE:13fd6762-6b17-4a94-a594-9a492e804382" mode="readonly" name="file_size" type="longlong">
+        <description>The size of the file in bytes.</description>
         <units>B</units>
         <kind kindtype="configure"/>
         <action type="external"/>
@@ -416,12 +495,12 @@ This stream identifier is for the SRI structure sent by pushSRI(). This file *sh
         <action type="external"/>
       </simple>
       <simple id="DCE:addfe635-bbef-4c9d-83c2-03dd149a3b49" mode="readwrite" name="format" type="string">
-        <description>This value may not be set until file playback has been started as it can be determined in file header (ie - bluefile/wav)</description>
+        <description>This value may not be set until file playback has been started as it can be determined from the file header (i.e. - bluefile and wav).</description>
         <kind kindtype="configure"/>
         <action type="external"/>
       </simple>
       <simple id="DCE:ebc0a4de-958f-4785-bbe4-03693c34f879" mode="readonly" name="error_msg" type="string">
-        <description>Will be blank if no error has occurred</description>
+        <description>Will be blank if no error has occurred.</description>
         <kind kindtype="configure"/>
         <action type="external"/>
       </simple>
@@ -430,8 +509,9 @@ This stream identifier is for the SRI structure sent by pushSRI(). This file *sh
     <configurationkind kindtype="configure"/>
   </structsequence>
   <struct id="component_status" mode="readonly" name="component_status">
+    <description>The status of the component.</description>
     <simple id="estimated_output_rate_Bps" mode="readonly" name="estimated_output_rate_Bps" type="long">
-      <description>NOTE: Refresh rate of this variable will be affected when viewing via the IDE</description>
+      <description>The refresh rate of this property will be affected when viewing via the IDE.</description>
       <value>0</value>
       <units>Bps </units>
       <kind kindtype="configure"/>

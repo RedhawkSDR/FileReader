@@ -2,14 +2,14 @@
  * This file is protected by Copyright. Please refer to the COPYRIGHT file
  * distributed with this source distribution.
  *
- * This file is part of FilterDecimate.
+ * This file is part of REDHAWK Basic Components FileReader.
  *
- * FilterDecimate is free software: you can redistribute it and/or modify it
+ * REDHAWK Basic Components FileReader is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
  * Free Software Foundation, either version 3 of the License, or (at your
  * option) any later version.
  *
- * FilterDecimate is distributed in the hope that it will be useful, but WITHOUT
+ * REDHAWK Basic Components FileReader is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
  * for more details.

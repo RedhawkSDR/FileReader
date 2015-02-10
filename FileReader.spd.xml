@@ -1,13 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+ This file is protected by Copyright. Please refer to the COPYRIGHT file
+ distributed with this source distribution.
+ 
+ This file is part of REDHAWK Basic Components FileReader.
+ 
+ REDHAWK Basic Components FileReader is free software: you can redistribute it and/or modify it
+ under the terms of the GNU General Public License as published by the
+ Free Software Foundation, either version 3 of the License, or (at your
+ option) any later version.
+ 
+ REDHAWK Basic Components FileReader is distributed in the hope that it will be useful, but WITHOUT
+ ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ for more details.
+ 
+ You should have received a copy of the GNU General Public License
+ along with this program.  If not, see http://www.gnu.org/licenses/.
+-->
 <!DOCTYPE softpkg PUBLIC "-//JTRS//DTD SCA V2.2.2 SPD//EN" "softpkg.dtd">
-<softpkg version="3.0.0" id="DCE:e908064e-62f4-4641-9fec-76026411b92a" name="FileReader" type="sca_compliant">
-  <title/>
+<softpkg id="DCE:e908064e-62f4-4641-9fec-76026411b92a" name="FileReader" type="sca_compliant" version="3.0.0">
+  <title></title>
   <author>
-    <name/>
+    <name></name>
   </author>
-  <description>NOTES::
+  <description>The FileReader component is responsible for reading data from a file on the SCA or local file system, and streaming the data out a BULKIO output port.
 
-(1) Connecting the "DomainManager_out" port is optional. You only have to connect if you are using the sca filesystem to read files AND you have a specific domain you would like to connec to. If not connected, it uses the last valid domain that is found. 
-</description>
+Note that connecting the &quot;DomainManager_out&quot; port is optional. You only have to connect if you are using the SCA filesystem to read files AND you have a specific domain you would like to connect to. If not connected, it uses the last valid domain that is found. </description>
   <propertyfile type="PRF">
     <localfile name="FileReader.prf.xml"/>
   </propertyfile>
