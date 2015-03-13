@@ -38,18 +38,18 @@ License:        None
 Source0:        %{name}-%{version}.tar.gz
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
-BuildRequires:  redhawk-devel >= 1.11
-Requires:       redhawk >= 1.11
+BuildRequires:  redhawk-devel >= 2.0
+Requires:       redhawk >= 2.0
 
 # Interface requirements
-BuildRequires:  bulkioInterfaces >= 1.11
-Requires:       bulkioInterfaces >= 1.11
+BuildRequires:  bulkioInterfaces >= 2.0
+Requires:       bulkioInterfaces >= 2.0
 
 BuildRequires:  RedhawkDevUtils_v1-devel >= 3.0.0
 Requires:       RedhawkDevUtils_v1 >= 3.0.0
 
-BuildRequires:  blueFileLib_v1-devel >= 1.0.0
-Requires:       blueFileLib_v1 >= 1.0.0
+BuildRequires:  blueFileLib-devel >= 1.0.0
+Requires:       blueFileLib >= 1.0.0
 
 %description
 Component %{name}
