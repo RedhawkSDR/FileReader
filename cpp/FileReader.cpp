@@ -117,7 +117,7 @@ void FileReader_i::advanced_propertiesChanged(const advanced_properties_struct *
 	}
 	// This property affects the SRI, so the reconstruct_property_sri function should be called
 	if (oldValue->center_frequency_keywords != newValue->center_frequency_keywords) {
-		reconstruct_property_sri();
+		reconstruct_property_sri(current_sample_rate);
 	}
 	// This property affects the throttle, so the reset_throttle function should be called
 	if (oldValue->throttle_rate != newValue->throttle_rate) {
@@ -144,18 +144,23 @@ void FileReader_i::file_formatChanged(const std::string *oldValue, const std::st
 	if (*oldValue != *newValue) {
 		restart_read_ahead_caching();
 	}
-    reconstruct_property_sri();
+    reconstruct_property_sri(current_sample_rate);
 }
 
 void FileReader_i::sample_rateChanged(const std::string *oldValue, const std::string *newValue) {
 	exclusive_lock lock(service_thread_lock);
 
 	if (*oldValue != *newValue) {
-		sample_rate_d = STD_STRING_HELPER::SPS_string_to_number(*newValue);
-		current_sample_rate = sample_rate_d;
-		reset_throttle();
-		reconstruct_property_sri();
-		restart_read_ahead_caching();
+		if (file_format == "BLUEFILE") {
+			LOG_WARN(FileReader_i, "Ignoring attempt to set sample rate while reading blue file");
+			sample_rate = *oldValue;
+		} else {
+			sample_rate_d = STD_STRING_HELPER::SPS_string_to_number(*newValue);
+			current_sample_rate = sample_rate_d;
+			reset_throttle();
+			reconstruct_property_sri(current_sample_rate);
+			restart_read_ahead_caching();
+		}
 	}
 }
 
@@ -164,7 +169,7 @@ void FileReader_i::center_frequencyChanged(const std::string *oldValue, const st
 
 	if (*oldValue != *newValue) {
 		center_frequency_d = STD_STRING_HELPER::HZ_string_to_number(*newValue);
-		reconstruct_property_sri();
+		reconstruct_property_sri(current_sample_rate);
 	}
 }
 
@@ -204,12 +209,12 @@ void FileReader_i::default_timestampChanged(const default_timestamp_struct *oldV
 
 void FileReader_i::default_sriChanged(const default_sri_struct *oldValue, const default_sri_struct *newValue) {
 	exclusive_lock lock(service_thread_lock);
-	reconstruct_property_sri();
+	reconstruct_property_sri(current_sample_rate);
 }
 
 void FileReader_i::default_sri_keywordsChanged(const std::vector<sri_keywords_struct_struct> *oldValue, const std::vector<sri_keywords_struct_struct> *newValue) {
 	exclusive_lock lock(service_thread_lock);
-	reconstruct_property_sri();
+	reconstruct_property_sri(current_sample_rate);
 }
 
 void FileReader_i::restart_read_ahead_caching() {
@@ -306,7 +311,7 @@ void FileReader_i::reconstruct_property_timestamp() {
     property_tstamp.twsec = default_timestamp.twsec;
 }
 
-void FileReader_i::reconstruct_property_sri() {
+void FileReader_i::reconstruct_property_sri(const double &sample_rate) {
     property_sri.hversion = default_sri.hversion;
     property_sri.xstart = default_sri.xstart;
     property_sri.xdelta = default_sri.xdelta;
@@ -318,6 +323,7 @@ void FileReader_i::reconstruct_property_sri() {
     property_sri.mode = default_sri.mode;
     property_sri.streamID = default_sri.streamID.c_str();
     property_sri.blocking = default_sri.blocking;
+
     // Autodetermine mode from data type
     if (property_sri.mode < 0){
         // COMPLEX_OCTET is not mapped properly in dth... Fixing for now
@@ -325,9 +331,18 @@ void FileReader_i::reconstruct_property_sri() {
         if (dataFormat == "COMPLEX_OCTET") dataFormat = SUPPORTED_DATA_TYPE::COMPLEX_OCTET;
         property_sri.mode = short(dth.get_dt_descriptor(dataFormat)->mode == SUPPORTED_DATA_TYPE::_complex_);
     }
-    // Autocalculate xdelta from sample rate
-    if (property_sri.xdelta <= 0)
-        property_sri.xdelta = 1.0 / sample_rate_d;
+
+    // If the sample rate passed in is valid, it will override
+    // the default SRI sample rate and the property
+    if (sample_rate > 0) {
+    	LOG_INFO(FileReader_i, "Using sample rate of " << sample_rate << " Sps")
+    	property_sri.xdelta = 1.0 / sample_rate;
+    } else if (property_sri.xdelta <= 0) {
+    	LOG_INFO(FileReader_i, "Default SRI xdelta invalid, using sample rate property");
+    	property_sri.xdelta = 1.0 / sample_rate_d;
+    } else {
+    	LOG_INFO(FileReader_i, "Using default SRI xdelta");
+    }
 
     bool has_col_rf = false;
     bool has_chan_rf = false;
@@ -1010,7 +1025,7 @@ int FileReader_i::serviceFunction() {
         //    constructed sri depends on current_data_format and
         //    will not reflect current_data_format unless called
         //    here
-		reconstruct_property_sri();
+		reconstruct_property_sri(pkt->sample_rate);
 
         // TIMESTAMP //
         // Determine timestamp to use: either (1) system time (2) from properties (3) from file header
@@ -1025,13 +1040,6 @@ int FileReader_i::serviceFunction() {
             data_tstamp = get_current_timestamp();
         }
         throttle_tstamp = get_current_timestamp();
-
-
-        // Sample rate
-        current_sample_rate = 1.0 / current_sri.xdelta;
-
-        // Update throttle
-        reset_throttle();
     }
 
     // sriChanged: every time the SRI needs to be updated
@@ -1058,6 +1066,16 @@ int FileReader_i::serviceFunction() {
             debug_print_sri(current_sri);
         }
         pushSRI(current_sri);
+
+        // Sample rate update
+        current_sample_rate = 1.0 / current_sri.xdelta;
+        sample_rate_d = current_sample_rate;
+        std::ostringstream sampleRateConverter;
+        sampleRateConverter << sample_rate_d;
+        sample_rate = sampleRateConverter.str();
+
+        // Update throttle
+        reset_throttle();
     }
 
 

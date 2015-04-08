@@ -273,7 +273,7 @@ private:
     void create_data_type_mapping();
     void start_cache_thread();
     void stop_cache_thread();
-    void reconstruct_property_sri();
+    void reconstruct_property_sri(const double &sample_rate);
     void reconstruct_property_timestamp();
     void reset_throttle();
     
