@@ -18,8 +18,8 @@
  * along with this program.  If not, see http://www.gnu.org/licenses/.
  */
 
-#ifndef FILEREADER_IMPL_BASE_H
-#define FILEREADER_IMPL_BASE_H
+#ifndef FILEREADER_BASE_IMPL_BASE_H
+#define FILEREADER_BASE_IMPL_BASE_H
 
 #include <boost/thread.hpp>
 #include <ossie/Component.h>
@@ -71,4 +71,4 @@ class FileReader_base : public Component, protected ThreadedComponent
 
     private:
 };
-#endif // FILEREADER_IMPL_BASE_H
+#endif // FILEREADER_BASE_IMPL_BASE_H

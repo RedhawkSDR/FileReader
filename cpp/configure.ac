@@ -30,29 +30,15 @@ OSSIE_SDRROOT_AS_PREFIX
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 
 # Dependencies
-export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:/usr/local/lib/pkgconfig"
-PKG_CHECK_MODULES([PROJECTDEPS], [ossie >= 1.11 omniORB4 >= 4.1.0  ])
-PKG_CHECK_MODULES([INTERFACEDEPS], [bulkio >= 1.11])
+PKG_CHECK_MODULES([PROJECTDEPS], [ossie >= 2.0 omniORB4 >= 4.1.0])
+PKG_CHECK_MODULES([INTERFACEDEPS], [bulkio >= 2.0])
+RH_SOFTPKG_CXX([/deps/blueFileLib_v1/blueFileLib_v1.spd.xml])
+RH_SOFTPKG_CXX([/deps/RedhawkDevUtils_v1/RedhawkDevUtils_v1.spd.xml])
 OSSIE_ENABLE_LOG4CXX
 AX_BOOST_BASE([1.41])
 AX_BOOST_SYSTEM
 AX_BOOST_THREAD
 AX_BOOST_REGEX
-
-export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:${SDR_ROOT}/dom/deps/RedhawkDevUtils_v1/cpp/lib/pkgconfig"
-PKG_CHECK_MODULES(RedhawkDevUtils_v1, RedhawkDevUtils_v1 >= 3.0.0)
-AC_SUBST(RedhawkDevUtils_v1_CFLAGS)
-AC_SUBST(RedhawkDevUtils_v1_LIBS)
-CXXFLAGS="$CXXFLAGS $RedhawkDevUtils_v1_CFLAGS"
-LIBS="$LIBS $RedhawkDevUtils_v1_LIBS"
-
-export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:${SDR_ROOT}/dom/deps/blueFileLib_v1/cpp/lib/pkgconfig"
-PKG_CHECK_MODULES(blueFileLib_v1, blueFileLib_v1 >= 1.0.0)
-AC_SUBST(blueFileLib_v1_CFLAGS)
-AC_SUBST(blueFileLib_v1_LIBS)
-CXXFLAGS="$CXXFLAGS $blueFileLib_v1_CFLAGS"
-LIBS="$LIBS $blueFileLib_v1_LIBS"
-
 
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT

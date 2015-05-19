@@ -37,27 +37,27 @@ FileReader_base::FileReader_base(const char *uuid, const char *label) :
     loadProperties();
 
     dataChar_out = new bulkio::OutCharPort("dataChar_out");
-    addPort("dataChar_out", dataChar_out);
+    addPort("dataChar_out", "Char output port for data. ", dataChar_out);
     dataDouble_out = new bulkio::OutDoublePort("dataDouble_out");
-    addPort("dataDouble_out", dataDouble_out);
+    addPort("dataDouble_out", "Double output port for data. ", dataDouble_out);
     dataFloat_out = new bulkio::OutFloatPort("dataFloat_out");
-    addPort("dataFloat_out", dataFloat_out);
+    addPort("dataFloat_out", "Float output port for data. ", dataFloat_out);
     dataLong_out = new bulkio::OutLongPort("dataLong_out");
-    addPort("dataLong_out", dataLong_out);
+    addPort("dataLong_out", "Long (4-Byte) output port for data. ", dataLong_out);
     dataLongLong_out = new bulkio::OutLongLongPort("dataLongLong_out");
-    addPort("dataLongLong_out", dataLongLong_out);
+    addPort("dataLongLong_out", "Long Long (8-Byte) output port for data. ", dataLongLong_out);
     dataOctet_out = new bulkio::OutOctetPort("dataOctet_out");
-    addPort("dataOctet_out", dataOctet_out);
+    addPort("dataOctet_out", "Octet (byte data) output port for data.  ", dataOctet_out);
     dataShort_out = new bulkio::OutShortPort("dataShort_out");
-    addPort("dataShort_out", dataShort_out);
+    addPort("dataShort_out", "Short (2 Byte) output port for data. ", dataShort_out);
     dataUlong_out = new bulkio::OutULongPort("dataUlong_out");
-    addPort("dataUlong_out", dataUlong_out);
+    addPort("dataUlong_out", "Unsigned Long output port for data. ", dataUlong_out);
     dataUlongLong_out = new bulkio::OutULongLongPort("dataUlongLong_out");
-    addPort("dataUlongLong_out", dataUlongLong_out);
+    addPort("dataUlongLong_out", "Unsigned Long Long output port for data. ", dataUlongLong_out);
     dataUshort_out = new bulkio::OutUShortPort("dataUshort_out");
-    addPort("dataUshort_out", dataUshort_out);
+    addPort("dataUshort_out", "Unsigned Short output port for data. ", dataUshort_out);
     dataXML_out = new bulkio::OutXMLPort("dataXML_out");
-    addPort("dataXML_out", dataXML_out);
+    addPort("dataXML_out", "XML output port for data. ", dataXML_out);
 }
 
 FileReader_base::~FileReader_base()
