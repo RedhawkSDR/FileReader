@@ -16,11 +16,11 @@
 # program.  If not, see http://www.gnu.org/licenses/.
 #
 
-ossieName = FileReader
-bindir = $(prefix)/dom/components/FileReader/cpp/
+ossieName = rh.FileReader
+bindir = $(prefix)/dom/components/rh/FileReader/cpp/
 bin_PROGRAMS = FileReader
 
-xmldir = $(prefix)/dom/components/FileReader/
+xmldir = $(prefix)/dom/components/rh/FileReader/
 dist_xml_DATA = ../FileReader.scd.xml ../FileReader.prf.xml ../FileReader.spd.xml
 ACLOCAL_AMFLAGS = -I$(OSSIEHOME)/share/aclocal/ossie
 

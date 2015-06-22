@@ -28,7 +28,7 @@ Prefix:         %{_prefix}
 %define _mandir        %{_prefix}/man
 %define _infodir       %{_prefix}/info
 
-Name:           FileReader
+Name:           rh.FileReader
 Version:        4.0.0
 Release:        1%{?dist}
 Summary:        Component %{name}
@@ -63,7 +63,7 @@ Component %{name}
 # Implementation cpp
 pushd cpp
 ./reconf
-%define _bindir %{_prefix}/dom/components/FileReader/cpp
+%define _bindir %{_prefix}/dom/components/rh/FileReader/cpp
 %configure
 make %{?_smp_mflags}
 popd
@@ -73,7 +73,7 @@ popd
 rm -rf $RPM_BUILD_ROOT
 # Implementation cpp
 pushd cpp
-%define _bindir %{_prefix}/dom/components/FileReader/cpp
+%define _bindir %{_prefix}/dom/components/rh/FileReader/cpp
 make install DESTDIR=$RPM_BUILD_ROOT
 popd
 
@@ -84,9 +84,9 @@ rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(-,redhawk,redhawk,-)
-%dir %{_prefix}/dom/components/FileReader
-%{_prefix}/dom/components/FileReader/FileReader.scd.xml
-%{_prefix}/dom/components/FileReader/FileReader.prf.xml
-%{_prefix}/dom/components/FileReader/FileReader.spd.xml
-%{_prefix}/dom/components/FileReader/cpp
+%dir %{_prefix}/dom/components/rh/FileReader
+%{_prefix}/dom/components/rh/FileReader/FileReader.scd.xml
+%{_prefix}/dom/components/rh/FileReader/FileReader.prf.xml
+%{_prefix}/dom/components/rh/FileReader/FileReader.spd.xml
+%{_prefix}/dom/components/rh/FileReader/cpp
 

@@ -1,28 +1,28 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<!-- 
- This file is protected by Copyright. Please refer to the COPYRIGHT file
- distributed with this source distribution.
- 
- This file is part of REDHAWK Basic Components FileReader.
- 
- REDHAWK Basic Components FileReader is free software: you can redistribute it and/or modify it
- under the terms of the GNU General Public License as published by the
- Free Software Foundation, either version 3 of the License, or (at your
- option) any later version.
- 
- REDHAWK Basic Components FileReader is distributed in the hope that it will be useful, but WITHOUT
- ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- for more details.
- 
- You should have received a copy of the GNU General Public License
- along with this program.  If not, see http://www.gnu.org/licenses/.
--->
+<?xml version='1.0' encoding='UTF-8'?>
 <!DOCTYPE softpkg PUBLIC "-//JTRS//DTD SCA V2.2.2 SPD//EN" "softpkg.dtd">
-<softpkg id="DCE:e908064e-62f4-4641-9fec-76026411b92a" name="FileReader" type="2.0.0" version="4.0.0">
-  <title></title>
+<!-- 
+This file is protected by Copyright. Please refer to the COPYRIGHT file
+distributed with this source distribution.
+
+This file is part of REDHAWK Basic Components FileReader.
+
+REDHAWK Basic Components FileReader is free software: you can redistribute it and/or modify it
+under the terms of the GNU General Public License as published by the
+Free Software Foundation, either version 3 of the License, or (at your
+option) any later version.
+
+REDHAWK Basic Components FileReader is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see http://www.gnu.org/licenses/.
+-->
+<softpkg id="DCE:c9070072-16d3-11e5-81d3-3417ebc4aab5" name="rh.FileReader" type="2.0.0" version="4.0.0">
+  <title/>
   <author>
-    <name></name>
+    <name/>
   </author>
   <description>The FileReader component is responsible for reading data from a file on the SCA or local file system, and streaming the data out a BULKIO output port.</description>
   <propertyfile type="PRF">

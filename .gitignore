@@ -6,7 +6,6 @@
 *.la
 *.lo
 .libs/
-.md5sums
 Makefile
 Makefile.in
 acinclude.m4
