@@ -475,6 +475,7 @@ void FileReader_i::read_ahead_thread() {
 					pkt->valid_sri = false;
 					pkt->sri.keywords.length(0);
 					pkt->valid_timestamp = false;
+					pkt->sample_rate = 0;
 					if (first_packet) {
 						filesystem.file_seek(fs_iter->filename,0);
 						running_read_total = 0;
@@ -1073,7 +1074,7 @@ int FileReader_i::serviceFunction() {
         std::ostringstream sampleRateConverter;
         sampleRateConverter << sample_rate_d;
         sample_rate = sampleRateConverter.str();
-
+        
         // Update throttle
         reset_throttle();
     }
