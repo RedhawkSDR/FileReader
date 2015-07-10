@@ -52,8 +52,8 @@
 #include <boost/thread/thread.hpp>
 #include <boost/thread/mutex.hpp>
 
-#include <blue/HeaderControlBlock.h>
-#include <blue/ExtendedHeader.h>
+#include <HeaderControlBlock.h>
+#include <ExtendedHeader.h>
 #include <abstracted_file_io.h>
 #include <byte_swap.h>
 

@@ -1,4 +1,4 @@
-<?xml version='1.0' encoding='UTF-8'?>
+<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE softpkg PUBLIC "-//JTRS//DTD SCA V2.2.2 SPD//EN" "softpkg.dtd">
 <!-- 
 This file is protected by Copyright. Please refer to the COPYRIGHT file
@@ -20,9 +20,9 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see http://www.gnu.org/licenses/.
 -->
 <softpkg id="DCE:c9070072-16d3-11e5-81d3-3417ebc4aab5" name="rh.FileReader" type="2.0.0" version="4.0.0">
-  <title/>
+  <title></title>
   <author>
-    <name/>
+    <name></name>
   </author>
   <description>The FileReader component is responsible for reading data from a file on the SCA or local file system, and streaming the data out a BULKIO output port.</description>
   <propertyfile type="PRF">
@@ -43,14 +43,16 @@ along with this program.  If not, see http://www.gnu.org/licenses/.
     <os name="Linux"/>
     <processor name="x86"/>
     <processor name="x86_64"/>
-    <dependency type="matching">
+    <dependency type="runtime_requirements">
       <softpkgref>
-        <localfile name="/deps/blueFileLib_v1/blueFileLib_v1.spd.xml"/>
+        <localfile name="/deps/rh/RedhawkDevUtils/RedhawkDevUtils.spd.xml"/>
+        <implref refid="cpp"/>
       </softpkgref>
     </dependency>
-    <dependency type="matching">
+    <dependency type="runtime_requirements">
       <softpkgref>
-        <localfile name="/deps/RedhawkDevUtils_v1/RedhawkDevUtils_v1.spd.xml"/>
+        <localfile name="/deps/rh/blueFileLib/blueFileLib.spd.xml"/>
+        <implref refid="cpp"/>
       </softpkgref>
     </dependency>
   </implementation>

@@ -34,6 +34,7 @@ FileReader_base::FileReader_base(const char *uuid, const char *label) :
     Component(uuid, label),
     ThreadedComponent()
 {
+#ifdef BEGIN_AUTOCOMPLETE_IGNORE
     loadProperties();
 
     dataChar_out = new bulkio::OutCharPort("dataChar_out");
@@ -58,6 +59,7 @@ FileReader_base::FileReader_base(const char *uuid, const char *label) :
     addPort("dataUshort_out", "Unsigned Short output port for data. ", dataUshort_out);
     dataXML_out = new bulkio::OutXMLPort("dataXML_out");
     addPort("dataXML_out", "XML output port for data. ", dataXML_out);
+#endif
 }
 
 FileReader_base::~FileReader_base()
@@ -86,6 +88,7 @@ FileReader_base::~FileReader_base()
     dataXML_out = 0;
 }
 
+#ifdef BEGIN_AUTOCOMPLETE_IGNORE
 /*******************************************************************************************
     Framework-level functions
     These functions are generally called by the framework to perform housekeeping.
@@ -125,7 +128,7 @@ void FileReader_base::loadProperties()
                 "readwrite",
                 "",
                 "external",
-                "configure");
+                "property");
 
     addProperty(file_format,
                 "SHORT",
@@ -134,7 +137,7 @@ void FileReader_base::loadProperties()
                 "readwrite",
                 "",
                 "external",
-                "configure");
+                "property");
 
     addProperty(sample_rate,
                 "25Msps",
@@ -143,7 +146,7 @@ void FileReader_base::loadProperties()
                 "readwrite",
                 "",
                 "external",
-                "configure");
+                "property");
 
     addProperty(center_frequency,
                 "0.0",
@@ -152,7 +155,7 @@ void FileReader_base::loadProperties()
                 "readwrite",
                 "",
                 "external",
-                "configure");
+                "property");
 
     addProperty(playback_state,
                 "STOP",
@@ -161,7 +164,7 @@ void FileReader_base::loadProperties()
                 "readwrite",
                 "",
                 "external",
-                "configure");
+                "property");
 
     addProperty(advanced_properties,
                 advanced_properties_struct(),
@@ -170,7 +173,7 @@ void FileReader_base::loadProperties()
                 "readwrite",
                 "",
                 "external",
-                "configure");
+                "property");
 
     addProperty(default_timestamp,
                 default_timestamp_struct(),
@@ -179,7 +182,7 @@ void FileReader_base::loadProperties()
                 "readwrite",
                 "",
                 "external",
-                "configure");
+                "property");
 
     addProperty(default_sri,
                 default_sri_struct(),
@@ -197,7 +200,7 @@ void FileReader_base::loadProperties()
                 "readonly",
                 "",
                 "external",
-                "configure");
+                "property");
 
     addProperty(default_sri_keywords,
                 "default_sri_keywords",
@@ -205,7 +208,7 @@ void FileReader_base::loadProperties()
                 "readwrite",
                 "",
                 "external",
-                "configure");
+                "property");
 
     addProperty(file_status,
                 "file_status",
@@ -213,8 +216,9 @@ void FileReader_base::loadProperties()
                 "readonly",
                 "",
                 "external",
-                "configure");
+                "property");
 
 }
+#endif
 
 

@@ -158,7 +158,7 @@ enable_time_filtering must be set to 'true' for this property to have an effect.
       <kind kindtype="configure"/>
       <action type="external"/>
     </simple>
-    <configurationkind kindtype="configure"/>
+    <configurationkind kindtype="property"/>
   </struct>
   <simple id="source_uri" mode="readwrite" name="source_uri" type="string">
     <description>The path to the file to be read.
@@ -167,7 +167,7 @@ URI accepted prefixes:
 file://	Local Filesystem
 sca:// 	SCA Filesystem (path relative to SDRROOT/dom)</description>
     <value>file://[path_to_local_file_or_dir] OR sca://[path_to_sca_file_or_dir]</value>
-    <kind kindtype="configure"/>
+    <kind kindtype="property"/>
     <action type="external"/>
   </simple>
   <simple id="file_format" mode="readwrite" name="file_format" type="string">
@@ -206,7 +206,7 @@ sca:// 	SCA Filesystem (path relative to SDRROOT/dom)</description>
       <enumeration label="COMPLEX DOUBLE (64f)" value="COMPLEX_DOUBLE"/>
       <enumeration label="COMPLEX DOUBLE (64f) byte-swapped" value="COMPLEX_DOUBLE_BYTESWAPPED"/>
     </enumerations>
-    <kind kindtype="configure"/>
+    <kind kindtype="property"/>
     <action type="external"/>
   </simple>
   <simple id="sample_rate" mode="readwrite" name="sample_rate" type="string">
@@ -218,7 +218,7 @@ Ksps (1e3 sps)
 Msps (1e6 sps)
 Gsps (1e9 sps)</description>
     <value>25Msps</value>
-    <kind kindtype="configure"/>
+    <kind kindtype="property"/>
     <action type="external"/>
   </simple>
   <simple id="center_frequency" mode="readwrite" name="center_frequency" type="string">
@@ -230,7 +230,7 @@ KHz (1e3 Hz)
 MHz (1e6 Hz)
 GHz (1e9 Hz)</description>
     <value>0.0</value>
-    <kind kindtype="configure"/>
+    <kind kindtype="property"/>
     <action type="external"/>
   </simple>
   <simple id="playback_state" mode="readwrite" name="playback_state" type="string">
@@ -241,7 +241,7 @@ GHz (1e9 Hz)</description>
       <enumeration label="PLAY" value="PLAY"/>
       <enumeration label="PAUSE" value="PAUSE"/>
     </enumerations>
-    <kind kindtype="configure"/>
+    <kind kindtype="property"/>
     <action type="external"/>
   </simple>
   <struct id="default_timestamp" mode="readwrite" name="default_timestamp">
@@ -291,7 +291,7 @@ GHz (1e9 Hz)</description>
       <kind kindtype="configure"/>
       <action type="external"/>
     </simple>
-    <configurationkind kindtype="configure"/>
+    <configurationkind kindtype="property"/>
   </struct>
   <struct id="default_sri" mode="readwrite" name="default_sri">
     <description>The default SRI to be used. May be ignored when SRI information is parsed from the file header.  Overrides for this are available in advanced properties.</description>
@@ -463,7 +463,7 @@ This stream identifier is for the SRI structure sent by pushSRI(). This file sho
       </simple>
       <configurationkind kindtype="configure"/>
     </struct>
-    <configurationkind kindtype="configure"/>
+    <configurationkind kindtype="property"/>
   </structsequence>
   <structsequence id="file_status" mode="readonly" name="file_status">
     <description>Read-only status of files available for playback.</description>
@@ -506,7 +506,7 @@ This stream identifier is for the SRI structure sent by pushSRI(). This file sho
       </simple>
       <configurationkind kindtype="configure"/>
     </struct>
-    <configurationkind kindtype="configure"/>
+    <configurationkind kindtype="property"/>
   </structsequence>
   <struct id="component_status" mode="readonly" name="component_status">
     <description>The status of the component.</description>
@@ -521,6 +521,6 @@ This stream identifier is for the SRI structure sent by pushSRI(). This file sho
       <description>Name of the domain in which this component exists. &quot;(domainless)&quot; is reported if no domain can be found.</description>
       <value>(domainless)</value>
     </simple>
-    <configurationkind kindtype="configure"/>
+    <configurationkind kindtype="property"/>
   </struct>
 </properties>

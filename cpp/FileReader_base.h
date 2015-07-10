@@ -34,6 +34,10 @@ class FileReader_base : public Component, protected ThreadedComponent
         FileReader_base(const char *uuid, const char *label);
         ~FileReader_base();
 
+#ifdef BEGIN_AUTOCOMPLETE_IGNORE
+    /**
+     * \cond INTERNAL
+     */
         void start() throw (CF::Resource::StartError, CORBA::SystemException);
 
         void stop() throw (CF::Resource::StopError, CORBA::SystemException);
@@ -41,32 +45,58 @@ class FileReader_base : public Component, protected ThreadedComponent
         void releaseObject() throw (CF::LifeCycle::ReleaseError, CORBA::SystemException);
 
         void loadProperties();
+    /**
+     * \endcond
+     */
+#endif
 
     protected:
         // Member variables exposed as properties
+        /// Property: source_uri
         std::string source_uri;
+        /// Property: file_format
         std::string file_format;
+        /// Property: sample_rate
         std::string sample_rate;
+        /// Property: center_frequency
         std::string center_frequency;
+        /// Property: playback_state
         std::string playback_state;
+        /// Property: advanced_properties
         advanced_properties_struct advanced_properties;
+        /// Property: default_timestamp
         default_timestamp_struct default_timestamp;
+        /// Property: default_sri
         default_sri_struct default_sri;
+        /// Property: component_status
         component_status_struct component_status;
+        /// Property: default_sri_keywords
         std::vector<sri_keywords_struct_struct> default_sri_keywords;
+        /// Property: file_status
         std::vector<file_status_struct_struct> file_status;
 
         // Ports
+        /// Port: dataChar_out
         bulkio::OutCharPort *dataChar_out;
+        /// Port: dataDouble_out
         bulkio::OutDoublePort *dataDouble_out;
+        /// Port: dataFloat_out
         bulkio::OutFloatPort *dataFloat_out;
+        /// Port: dataLong_out
         bulkio::OutLongPort *dataLong_out;
+        /// Port: dataLongLong_out
         bulkio::OutLongLongPort *dataLongLong_out;
+        /// Port: dataOctet_out
         bulkio::OutOctetPort *dataOctet_out;
+        /// Port: dataShort_out
         bulkio::OutShortPort *dataShort_out;
+        /// Port: dataUlong_out
         bulkio::OutULongPort *dataUlong_out;
+        /// Port: dataUlongLong_out
         bulkio::OutULongLongPort *dataUlongLong_out;
+        /// Port: dataUshort_out
         bulkio::OutUShortPort *dataUshort_out;
+        /// Port: dataXML_out
         bulkio::OutXMLPort *dataXML_out;
 
     private:

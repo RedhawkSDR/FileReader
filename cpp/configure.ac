@@ -32,8 +32,8 @@ m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 # Dependencies
 PKG_CHECK_MODULES([PROJECTDEPS], [ossie >= 2.0 omniORB4 >= 4.1.0])
 PKG_CHECK_MODULES([INTERFACEDEPS], [bulkio >= 2.0])
-RH_SOFTPKG_CXX([/deps/blueFileLib_v1/blueFileLib_v1.spd.xml])
-RH_SOFTPKG_CXX([/deps/RedhawkDevUtils_v1/RedhawkDevUtils_v1.spd.xml])
+RH_SOFTPKG_CXX([/deps/rh/RedhawkDevUtils/RedhawkDevUtils.spd.xml],[cpp],[4.0])
+RH_SOFTPKG_CXX([/deps/rh/blueFileLib/blueFileLib.spd.xml],[cpp],[2.0])
 OSSIE_ENABLE_LOG4CXX
 AX_BOOST_BASE([1.41])
 AX_BOOST_SYSTEM
