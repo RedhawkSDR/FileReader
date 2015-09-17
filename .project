@@ -6,11 +6,6 @@
 	</projects>
 	<buildSpec>
 		<buildCommand>
-			<name>gov.redhawk.ide.codegen.builders.TopLevelRPMSpec</name>
-			<arguments>
-			</arguments>
-		</buildCommand>
-		<buildCommand>
 			<name>gov.redhawk.ide.codegen.jet.cplusplus.builder</name>
 			<arguments>
 			</arguments>

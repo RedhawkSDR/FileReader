@@ -22,10 +22,13 @@ bin_PROGRAMS = FileReader
 
 xmldir = $(prefix)/dom/components/rh/FileReader/
 dist_xml_DATA = ../FileReader.scd.xml ../FileReader.prf.xml ../FileReader.spd.xml
-ACLOCAL_AMFLAGS = -I$(OSSIEHOME)/share/aclocal/ossie
+ACLOCAL_AMFLAGS = -I m4 -I${OSSIEHOME}/share/aclocal/ossie
+AUTOMAKE_OPTIONS = subdir-objects
+
 
 
 distclean-local:
+	rm -rf m4
 	rm -f config.*
 	rm -rf autom4te.cache
 	rm -f acinclude.m4

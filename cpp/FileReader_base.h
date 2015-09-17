@@ -34,10 +34,6 @@ class FileReader_base : public Component, protected ThreadedComponent
         FileReader_base(const char *uuid, const char *label);
         ~FileReader_base();
 
-#ifdef BEGIN_AUTOCOMPLETE_IGNORE
-    /**
-     * \cond INTERNAL
-     */
         void start() throw (CF::Resource::StartError, CORBA::SystemException);
 
         void stop() throw (CF::Resource::StopError, CORBA::SystemException);
@@ -45,10 +41,6 @@ class FileReader_base : public Component, protected ThreadedComponent
         void releaseObject() throw (CF::LifeCycle::ReleaseError, CORBA::SystemException);
 
         void loadProperties();
-    /**
-     * \endcond
-     */
-#endif
 
     protected:
         // Member variables exposed as properties

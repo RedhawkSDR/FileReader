@@ -34,7 +34,6 @@ FileReader_base::FileReader_base(const char *uuid, const char *label) :
     Component(uuid, label),
     ThreadedComponent()
 {
-#ifdef BEGIN_AUTOCOMPLETE_IGNORE
     loadProperties();
 
     dataChar_out = new bulkio::OutCharPort("dataChar_out");
@@ -59,7 +58,6 @@ FileReader_base::FileReader_base(const char *uuid, const char *label) :
     addPort("dataUshort_out", "Unsigned Short output port for data. ", dataUshort_out);
     dataXML_out = new bulkio::OutXMLPort("dataXML_out");
     addPort("dataXML_out", "XML output port for data. ", dataXML_out);
-#endif
 }
 
 FileReader_base::~FileReader_base()
@@ -88,7 +86,6 @@ FileReader_base::~FileReader_base()
     dataXML_out = 0;
 }
 
-#ifdef BEGIN_AUTOCOMPLETE_IGNORE
 /*******************************************************************************************
     Framework-level functions
     These functions are generally called by the framework to perform housekeeping.
@@ -219,6 +216,5 @@ void FileReader_base::loadProperties()
                 "property");
 
 }
-#endif
 
 
