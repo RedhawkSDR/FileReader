@@ -1,16 +1,13 @@
-# FileReader
+# REDHAWK Basic Components rh.FileReader
 
 ## Description
 
-The FileReader component is responsible for reading data from a file on the SCA or local file system, and streaming the data out a BULKIO output port.
+Contains the source and build script for the REDHAWK Basic Components rh.FileReader. The rh.FileReader component is responsible for reading data from a file on the SCA or local file system, and streaming the data out a BULKIO output port.
 
-## REDHAWK Documentation
 
-REDHAWK Website: [www.redhawkSDR.org](http://www.redhawksdr.org)
-
-Overview and Getting Started Guide: [PDF](http://sourceforge.net/projects/redhawksdr/files/redhawk-doc/1.10.1/REDHAWK_Overview_v1.10.1.pdf/download "PDF") [HTML](http://redhawksdr.github.com/Documentation/gettingstarted/main.html "HTML")
-
-Full REDHAWK Manual: [PDF](http://sourceforge.net/projects/redhawksdr/files/redhawk-doc/1.10.1/REDHAWK_Manual_v1.10.1.pdf/download "PDF") [HTML](http://redhawksdr.github.com/Documentation/main.html "HTML")
+## Installation Instructions
+This asset requires the rh.blueFileLib and rh.RedhawkDevUtils shared libraries. These must be installed in order to build and run this asset.
+To build from source, run the `build.sh` script found at the top level directory. To install to $SDRROOT run, `build.sh install`
 
 ## Copyrights
 
@@ -18,4 +15,4 @@ This work is protected by Copyright. Please refer to the [Copyright File](COPYRI
 
 ## License
 
-FileReader is licensed under the GNU General Public License (GPL).
+REDHAWK Basic Components rh.FileReader is licensed under the GNU General Public License (GPL).
