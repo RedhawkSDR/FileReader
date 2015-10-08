@@ -229,8 +229,8 @@ void FileReader_i::restart_read_ahead_caching() {
 		}
 	}
 
-	// Keep on a 2B boundary
-	if (packet_size  + PACKET_HEADER_RESERVED > CORBA_MAX_TRANSFER_BYTES ){
+	// Keep on a 2B boundary - Note: it's safe to cast packet_size because previous conditional block ensures it's >= 0
+	if (static_cast<unsigned long>(packet_size) + PACKET_HEADER_RESERVED > CORBA_MAX_TRANSFER_BYTES ){
 		int mult = std::max(int(std::floor((CORBA_MAX_TRANSFER_BYTES - PACKET_HEADER_RESERVED)/16)),1);
 		packet_size = mult*16;
 	}
