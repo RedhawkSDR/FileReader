@@ -69,13 +69,14 @@ void FileReader_i::initialize() throw (CF::LifeCycle::InitializeError, CORBA::Sy
 	FileReader_base::initialize();
     try {
         if(!filesystem.is_sca_file_manager_valid()){
-			CF::DomainManager_var dm = CF::DomainManager::_nil();
 			if (getDomainManager() && !CORBA::is_nil(getDomainManager()->getRef())) {
 				std::string dom_id = ossie::corba::returnString(getDomainManager()->getRef()->identifier());
-				dm = FILE_READER_DOMAIN_MGR_HELPERS::domainManager_id_to_var(dom_id);
+		    	CF::DomainManager_var dm = FILE_READER_DOMAIN_MGR_HELPERS::domainManager_id_to_var(dom_id);
+		    	if (!CORBA::is_nil(dm)){
+					filesystem.update_sca_file_manager(dm->fileMgr());
+					component_status.domain_name = ossie::corba::returnString(dm->name());
+		    	}
 			}
-		    filesystem.update_sca_file_manager(dm->fileMgr());
-        	component_status.domain_name = ossie::corba::returnString(dm->name());
         }
     } catch (...) {
     	LOG_DEBUG(FileReader_i,"Exception caught while attempting to update sca file manager");
