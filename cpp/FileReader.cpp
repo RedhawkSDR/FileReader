@@ -82,6 +82,19 @@ void FileReader_i::initialize() throw (CF::LifeCycle::InitializeError, CORBA::Sy
     	LOG_DEBUG(FileReader_i,"Exception caught while attempting to update sca file manager");
     	//component_status.domain_name = "(domainless)"; // leave as default value
     };
+
+    // Setup based on initial property values
+    sample_rate_d = STD_STRING_HELPER::SPS_string_to_number(sample_rate);
+    current_sample_rate = sample_rate_d;
+    current_data_format = file_format;
+	center_frequency_d = STD_STRING_HELPER::HZ_string_to_number(center_frequency);
+	reconstruct_property_sri(current_sample_rate);
+	reconstruct_property_timestamp();
+	// Call reset_throttle() to calculate throttle_rate_Bps, needed by restart_read_ahead_caching()
+	// The second call properly sets throttle_usleep based on packet_size, which is not set until restart_read_ahead_caching()
+	reset_throttle();
+	restart_read_ahead_caching();
+	reset_throttle();
 }
 
 void FileReader_i::start() throw (CF::Resource::StartError, CORBA::SystemException) {
