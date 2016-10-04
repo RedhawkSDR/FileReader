@@ -278,7 +278,7 @@ private:
     void reset_throttle();
     
     bool process_bluefile_fixedheader(shared_ptr_file_packet current_packet, blue::HeaderControlBlock* hcb);
-    bool process_bluefile_extendedheader(shared_ptr_file_packet current_packet, blue::ExtendedHeader* e_hdr, bool isReal);
+    bool process_bluefile_extendedheader(shared_ptr_file_packet current_packet, blue::ExtendedHeader* e_hdr, bool isReal, bool byteSwap);
     bool process_wav_header(shared_ptr_file_packet current_packet, WAV_HELPERS::wav_file_header *wfh);
 
 

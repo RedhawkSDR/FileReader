@@ -516,7 +516,8 @@ void FileReader_i::read_ahead_thread() {
 							filesystem.file_seek(fs_iter->filename, (unsigned long long) hdr.getExtStart() * BLUEFILE_BLOCK_SIZE);
 							filesystem.read(fs_iter->filename, &pkt->dataBuffer, hdr.getExtSize());
 							blue::ExtendedHeader e_hdr;
-							if (!process_bluefile_extendedheader(pkt, &e_hdr, isReal)) {
+                            bool byteSwap = hdr.isHeaderEndianceReversed();
+							if (!process_bluefile_extendedheader(pkt, &e_hdr, isReal, byteSwap)) {
 								std::string error_msg = "ERROR: BLUE FILE EXTENDED HEADER IS INVALID FOR FILE:  " + std::string(fs_iter->filename);
 								std::cout << error_msg << std::endl;
 								fs_iter->error_msg = error_msg;
@@ -708,8 +709,8 @@ bool FileReader_i::process_bluefile_fixedheader(shared_ptr_file_packet current_p
 
 }
 
-bool FileReader_i::process_bluefile_extendedheader(shared_ptr_file_packet current_packet, blue::ExtendedHeader* e_hdr, bool isReal) {
-    int ret = e_hdr->loadFromBuffer(& current_packet->dataBuffer[0], current_packet->dataBuffer.size(), false);
+bool FileReader_i::process_bluefile_extendedheader(shared_ptr_file_packet current_packet, blue::ExtendedHeader* e_hdr, bool isReal, bool byteSwap) {
+    int ret = e_hdr->loadFromBuffer(& current_packet->dataBuffer[0], current_packet->dataBuffer.size(), byteSwap);
     if (ret != 0)
         return false;
 
