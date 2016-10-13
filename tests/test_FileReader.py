@@ -24,6 +24,57 @@ import time
 from ossie.utils import sb
 import struct
 from math import isnan
+from ossie.properties import props_from_dict, props_to_dict
+from ossie.utils.bluefile import bluefile, bluefile_helpers
+from bulkio.bulkioInterfaces import BULKIO__POA
+from bulkio.sri import create as createSri
+from bulkio.timestamp import create as createTs
+
+STRING_MAP = {'octet':'B',
+              'char':'b',
+              'short':'h',
+              'ushort':'H',
+              'long':'i',
+              'ulong':'I',
+              'float':'f',
+              'double':'d'}
+
+BYTE_MAP = {'octet':1,
+            'char':1,
+            'short':2,
+            'ushort':2,
+            'long':4,
+            'ulong':4,
+            'float':4,
+            'double':8}
+
+def toStr(data, dataType):
+    """pack data in to a string
+    """
+    return struct.pack("%s%s" % (len(data), STRING_MAP[dataType]), *data)
+
+def fromStr(dataStr, dataType):
+    """unpack data from a string
+    """
+    return struct.unpack("%s%s" % (long(len(dataStr)/BYTE_MAP[dataType]), STRING_MAP[dataType]), dataStr)
+
+def flip(dataStr, dataType):
+    """given data packed into a string - reverse bytes for a given word length and returned the byte-flipped 
+     string
+    """
+    numBytes = BYTE_MAP[dataType]
+    out = ""
+    for i in xrange(len(dataStr) / numBytes):
+        l = list(dataStr[numBytes * i:numBytes * (i + 1)])
+        l.reverse()
+        out += ''.join(l)
+    
+    return out
+
+def swap(data, dataType):
+    dataStr = toStr(data, dataType)
+    strFlip = flip(dataStr, dataType)
+    return fromStr(strFlip, dataType)
 
 class ResourceTests(ossie.utils.testing.ScaComponentTestCase):
     """Test for all resource implementations in FileReader"""
@@ -247,6 +298,151 @@ class ResourceTests(ossie.utils.testing.ScaComponentTestCase):
         self.assertSRIOutputMode(1)
         self.tearDownFlow(dataFileIn)
         print "........ PASSED\n"
+    
+    def testBlueShortPort(self):
+        #######################################################################
+        # Test Bluefile SHORT Functionality
+        print "\n**TESTING BLUEFILE + SHORT PORT"
+        
+        #Define test files
+        dataFileIn = './bluefile.in'
+        
+        #Create Test Data File if it doesn't exist
+        if not os.path.isfile(dataFileIn):
+            tmpSink = bluefile_helpers.BlueFileWriter(dataFileIn, BULKIO__POA.dataShort)
+            tmpSink.start()
+            tmpSri = createSri('bluefileShort', 5000)
+            tmpSri.keywords = props_from_dict({'TEST_KW':1234})
+            tmpSink.pushSRI(tmpSri)
+            tmpTs = createTs()
+            tmpSink.pushPacket(range(1024), tmpTs, True, 'bluefileShort')
+            
+        #Read in Data from Test File
+        hdr, d = bluefile.read(dataFileIn, dict)
+        data = list(d)
+        keywords = hdr['ext_header']
+            
+        #Create Components and Connections
+        comp = sb.launch('../FileReader.spd.xml')
+        comp.source_uri = dataFileIn
+        comp.file_format = 'BLUEFILE'
+        
+        sink = sb.DataSink()
+        comp.connect(sink, usesPortName='dataShort_out')
+        
+        #Start Components & Push Data
+        sb.start()
+        comp.playback_state = 'PLAY'
+        time.sleep(2)
+        readData = sink.getData()
+        readKeywords = props_to_dict(sink.sri().keywords)
+        sb.stop()
+        
+        #Check that the input and output files are the same          
+        try:
+            self.assertEqual(data, readData)
+        except self.failureException as e:
+            comp.releaseObject()
+            sink.releaseObject()
+            os.remove(dataFileIn)
+            raise e
+        
+        #Check that the keywords are the same
+        try:
+            self.assertEqual(keywords, readKeywords)
+        except self.failureException as e:
+            comp.releaseObject()
+            sink.releaseObject()
+            os.remove(dataFileIn)
+            raise e
+        
+        #Release the components and remove the generated files
+        comp.releaseObject()
+        sink.releaseObject()
+        os.remove(dataFileIn)
+        
+        print "........ PASSED\n"
+        return
+    
+    def testBlueShortPortSwapped(self):
+        #######################################################################
+        # Test Bluefile Swapped SHORT Functionality
+        print "\n**TESTING BLUEFILE Swapped + SHORT PORT"
+        
+        #Define test files
+        dataFileIn = './bluefile.in'
+        dataFileInSwap = './bluefile.in.swap'
+        
+        #Create Test Data File if it doesn't exist
+        if not os.path.isfile(dataFileIn):
+            tmpSink = bluefile_helpers.BlueFileWriter(dataFileIn, BULKIO__POA.dataShort)
+            tmpSink.start()
+            tmpSri = createSri('bluefileShortSwapped', 5000)
+            #kwVal = 1234
+            #kwSwap = swap([kwVal], 'long')[0]
+            #tmpSri.keywords = props_from_dict({'TEST_KW':kwSwap})
+            tmpSri.keywords = props_from_dict({'TEST_KW':1234})
+            tmpSink.pushSRI(tmpSri)
+            tmpTs = createTs()
+            #tmpSink.pushPacket(swap(range(1024),'short'), tmpTs, True, 'bluefileShortSwapped')
+            tmpSink.pushPacket(range(1024), tmpTs, True, 'bluefileShortSwapped')
+            
+        #Read in Data from Test File, modify header, and rewrite
+        hdr, d = bluefile.read(dataFileIn, dict)
+        hdr['file_name'] = dataFileInSwap
+        hdr['head_rep'] = 'IEEE'
+        hdr['data_rep'] = 'IEEE'
+        bluefile.write(dataFileInSwap, hdr, d)
+            
+        #Read in Data from Swapped Test File
+        hdr, d = bluefile.read(dataFileInSwap, dict)
+        data = list(d)
+        keywords = hdr['ext_header']
+            
+        #Create Components and Connections
+        comp = sb.launch('../FileReader.spd.xml')
+        comp.source_uri = dataFileInSwap
+        comp.file_format = 'BLUEFILE'
+        
+        sink = sb.DataSink()
+        comp.connect(sink, usesPortName='dataShort_out')
+        
+        #Start Components & Push Data
+        sb.start()
+        comp.playback_state = 'PLAY'
+        time.sleep(2)
+        readData = sink.getData()
+        readKeywords = props_to_dict(sink.sri().keywords)
+        sb.stop()
+        
+        #Check that the input and output files are the same          
+        try:
+            self.assertEqual(data, readData)
+        except self.failureException as e:
+            comp.releaseObject()
+            sink.releaseObject()
+            os.remove(dataFileIn)
+            os.remove(dataFileInSwap)
+            raise e
+        
+        #Check that the keywords are the same
+        try:
+            self.assertEqual(keywords, readKeywords)
+        except self.failureException as e:
+            comp.releaseObject()
+            sink.releaseObject()
+            os.remove(dataFileIn)
+            os.remove(dataFileInSwap)
+            raise e
+        
+        #Release the components and remove the generated files
+        comp.releaseObject()
+        sink.releaseObject()
+        os.remove(dataFileIn)
+        os.remove(dataFileInSwap)
+        
+        print "........ PASSED\n"
+        return
     
     def testShortPort(self):
         #######################################################################
