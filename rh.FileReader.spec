@@ -29,7 +29,7 @@ Prefix:         %{_prefix}
 %define _infodir       %{_prefix}/info
 
 Name:           rh.FileReader
-Version:        4.0.2
+Version:        4.0.3
 Release:        1%{?dist}
 Summary:        Component %{name}
 

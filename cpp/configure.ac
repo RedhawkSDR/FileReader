@@ -16,7 +16,7 @@
 # program.  If not, see http://www.gnu.org/licenses/.
 #
 
-AC_INIT(rh.FileReader, 4.0.2)
+AC_INIT(rh.FileReader, 4.0.3)
 AM_INIT_AUTOMAKE([nostdinc foreign])
 AC_CONFIG_MACRO_DIR([m4])
 
