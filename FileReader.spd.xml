@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE softpkg PUBLIC "-//JTRS//DTD SCA V2.2.2 SPD//EN" "softpkg.dtd">
-<!-- 
+<!--
 This file is protected by Copyright. Please refer to the COPYRIGHT file
 distributed with this source distribution.
 
@@ -19,7 +19,7 @@ for more details.
 You should have received a copy of the GNU Lesser General Public License
 along with this program.  If not, see http://www.gnu.org/licenses/.
 -->
-<softpkg id="DCE:c9070072-16d3-11e5-81d3-3417ebc4aab5" name="rh.FileReader" type="2.0.0" version="4.0.3">
+<softpkg id="DCE:c9070072-16d3-11e5-81d3-3417ebc4aab5" name="rh.FileReader" type="2.0.0" version="4.0.4">
   <title></title>
   <author>
     <name></name>
