@@ -660,7 +660,15 @@ bool FileReader_i::process_bluefile_fixedheader(shared_ptr_file_packet current_p
     }
 
     std::vector<std::string> kwn = hcb->getKeywordNames();
+    double tc_prec = 0;
     for (std::vector<std::string>::iterator keyIter = kwn.begin(); keyIter != kwn.end(); keyIter++) {
+    	// if TC_PREC, store value for timestamp creation and DO NOT add to SRI keywords
+    	if ( *keyIter == "TC_PREC") {
+            tc_prec = std::atof(hcb->getKeywordValue(*keyIter).c_str());
+    		LOG_DEBUG(FileReader_i,"Using TC_PREC keyword in BLUE file header for extra timecode precision ("<<tc_prec<<".");
+    		LOG_DEBUG(FileReader_i,"TC_PREC keyword in BLUE file header is NOT added to SRI keywords.");
+    		continue;
+    	}
         size_t cur_kw_size = current_packet->sri.keywords.length();
         current_packet->sri.keywords.length(cur_kw_size + 1);
         current_packet->sri.keywords[cur_kw_size].id = keyIter->c_str();
@@ -668,12 +676,12 @@ bool FileReader_i::process_bluefile_fixedheader(shared_ptr_file_packet current_p
         current_packet->sri.keywords[cur_kw_size].value <<= CORBA::string_dup(val.c_str());
     }
 
-
     double tc =  hcb->getTimeCode();
     //No other way to validate time.  tc is in terms of Jan 1 1950
-    if(tc > double(TWENTY_YEARS_S) && tc <double(10.0*TWENTY_YEARS_S)){
-         current_packet->tstamp =  get_utc_time(2,tc);
-         current_packet->valid_timestamp = true;
+    if(tc > double(TWENTY_YEARS_S) && tc < double(10.0*TWENTY_YEARS_S)){
+        current_packet->tstamp =  get_utc_time(2,tc);
+        current_packet->tstamp.tfsec += tc_prec;
+        current_packet->valid_timestamp = true;
     }
     
     

@@ -379,7 +379,8 @@ private:
     }
 
 
-    // System Time = 0, J170 = 1, J1950 = 2
+    // System Time = 0, J1970 = 1, J1950 = 2
+    // Note: FEI defines a timeType enum that has J1950=1, which conflicts with this definition.
 
     inline BULKIO::PrecisionUTCTime get_utc_time(short from_type = 0, double from_time = 0.0) {
         // Tstamp Init
@@ -402,7 +403,7 @@ private:
             tstamp.tcmode = BULKIO::TCM_OFF;
             tstamp.tcstatus = BULKIO::TCS_VALID;
             tstamp.toff = 0.0;
-            tstamp.twsec = whole - double(631152000);
+            tstamp.twsec = whole - double(TWENTY_YEARS_S);
             tstamp.tfsec = fract;
         } else {
             struct timeval tmp_time;

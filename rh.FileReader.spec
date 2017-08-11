@@ -18,7 +18,7 @@
 
 # By default, the RPM will install to the standard REDHAWK SDR root location (/var/redhawk/sdr)
 # You can override this at install time using --prefix /new/sdr/root when invoking rpm (preferred method, if you must)
-%{!?_sdrroot: %define _sdrroot /var/redhawk/sdr}
+%{!?_sdrroot: %global _sdrroot /var/redhawk/sdr}
 %define _prefix %{_sdrroot}
 Prefix:         %{_prefix}
 
@@ -29,7 +29,7 @@ Prefix:         %{_prefix}
 %define _infodir       %{_prefix}/info
 
 Name:           rh.FileReader
-Version:        4.0.4
+Version:        4.1.0
 Release:        1%{?dist}
 Summary:        Component %{name}
 
@@ -43,8 +43,8 @@ Requires:       redhawk >= 2.0
 
 BuildRequires:  rh.RedhawkDevUtils-devel >= 4.0
 Requires:       rh.RedhawkDevUtils >= 4.0
-BuildRequires:  rh.blueFileLib-devel >= 2.0
-Requires:       rh.blueFileLib >= 2.0
+BuildRequires:  rh.blueFileLib-devel >= 2.1
+Requires:       rh.blueFileLib >= 2.1
 
 # Interface requirements
 BuildRequires:  bulkioInterfaces >= 2.0
@@ -88,7 +88,8 @@ rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(-,redhawk,redhawk,-)
-%dir %{_prefix}/dom/components/rh/FileReader
+%dir %{_sdrroot}/dom/components/rh
+%dir %{_sdrroot}/dom/components/rh/FileReader
 %{_prefix}/dom/components/rh/FileReader/FileReader.scd.xml
 %{_prefix}/dom/components/rh/FileReader/FileReader.prf.xml
 %{_prefix}/dom/components/rh/FileReader/FileReader.spd.xml
