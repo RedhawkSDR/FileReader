@@ -756,6 +756,103 @@ class ResourceTests(ossie.utils.testing.ScaComponentTestCase):
         
         print "........ PASSED\n"
         return
+    
+    def testBlueTimestampPrecision(self):
+        #######################################################################
+        # Test BLUE file high precision timecode using TC_PREC keyword
+        print "\n**TESTING BLUE file with TC_PREC"
+        
+        #Define test files
+        dataFileIn = './bluefile.in'
+        
+        #Create Test Data File if it doesn't exist
+        if not os.path.isfile(dataFileIn):
+            tmpSink = bluefile_helpers.BlueFileWriter(dataFileIn, BULKIO__POA.dataShort)
+            tmpSink.start()
+            tmpSri = createSri('bluefileShort', 5000)
+            tmpSri.keywords = props_from_dict({'TEST_KW':1234})
+            tmpSink.pushSRI(tmpSri)
+            tmpTs = createTs()
+            tmpSink.pushPacket(range(1024), tmpTs, True, 'bluefileShort')
+            hdr, d = bluefile.read(dataFileIn, dict)
+            hdr['xstart'] = 5.5
+            hdr['timecode'] = 1234567890.0987654
+            hdr['keywords']['TC_PREC'] = '3.2112E-08'
+            # Together, start_time = 1234567895.598765432112
+            bluefile.write(dataFileIn, hdr, d)
+            
+        #Read in Data from Test File
+        hdr, d = bluefile.read(dataFileIn, dict)
+        data = list(d)
+        keywords = hdr['ext_header']
+            
+        #Create Components and Connections
+        comp = sb.launch('../FileReader.spd.xml')
+        comp.source_uri = dataFileIn
+        comp.file_format = 'BLUEFILE'
+        
+        sink = sb.DataSink()
+        comp.connect(sink, usesPortName='dataShort_out')
+        
+        #Start Components & Push Data
+        sb.start()
+        comp.playback_state = 'PLAY'
+        time.sleep(2)
+        readData, readTstamps = sink.getData(tstamps=True)
+        readKeywords = props_to_dict(sink.sri().keywords)
+        readXstart = sink.sri().xstart
+        sb.stop()
+
+        #Check that timestamps are the same
+        # Source: hdr['xstart'], hdr['timecode']-long(631152000), and float(hdr['keywords']['TC_PREC'])
+        # Output: readTsamps, and sink.sri().xstart
+        src_twsec = float(long(hdr['timecode'])-long(631152000))
+        src_twsec += long(hdr['xstart'])
+        src_tfsec = hdr['timecode']-long(hdr['timecode'])
+        src_tfsec += (hdr['xstart']-long(hdr['xstart']))
+        src_tfsec += float(hdr['keywords']['TC_PREC'])
+        out_twsec = readTstamps[0][1].twsec + long(readXstart)
+        out_tfsec = readTstamps[0][1].tfsec + (readXstart-long(readXstart))
+
+        try:
+            self.assertEqual(src_twsec, out_twsec, "Whole seconds do not match.")
+            self.assertAlmostEqual(src_tfsec, out_tfsec, places=12, msg="Fractional seconds do not match.")
+        except self.failureException as e:
+            print 'Source time info: timecode=%s  xstart=%s  TC_PREC=%s'%(repr(hdr['timecode']), repr(hdr['xstart']), hdr['keywords']['TC_PREC'])
+            print 'Source time info: twsec=%s  tfsec=%s'%(repr(src_twsec), repr(src_tfsec))
+            print 'Output time info: readTstamps0.twsec=%s  readTstamps0.tfsec=%s  readXstart=%s'%(repr(readTstamps[0][1].twsec), repr(readTstamps[0][1].tfsec), repr(readXstart))
+            print 'Output time info: twsec=%s  tfsec=%s'%(repr(out_twsec), repr(out_tfsec))
+            comp.releaseObject()
+            sink.releaseObject()
+            os.remove(dataFileIn)
+            raise e
+        
+        #Check that the input and output files are the same          
+        try:
+            self.assertEqual(data, readData)
+        except self.failureException as e:
+            comp.releaseObject()
+            sink.releaseObject()
+            os.remove(dataFileIn)
+            raise e
+        
+        #Check that the keywords are the same
+        try:
+            self.assertEqual(keywords, readKeywords)
+        except self.failureException as e:
+            comp.releaseObject()
+            sink.releaseObject()
+            os.remove(dataFileIn)
+            raise e
+        
+        #Release the components and remove the generated files
+        comp.releaseObject()
+        sink.releaseObject()
+        os.remove(dataFileIn)
+        
+        print "........ PASSED\n"
+        return
+    
     # TODO Add additional tests here
     #
     # See:
