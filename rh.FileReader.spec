@@ -30,7 +30,7 @@ Prefix:         %{_prefix}
 
 Name:           rh.FileReader
 Version:        4.1.0
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        Component %{name}
 
 Group:          REDHAWK/Components
