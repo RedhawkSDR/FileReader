@@ -50,6 +50,7 @@ struct advanced_properties_struct {
         enable_time_filtering = false;
         start_time = 0.0;
         stop_time = -1.0;
+        use_metadata_file = false;
     };
 
     static std::string getId() {
@@ -72,6 +73,7 @@ struct advanced_properties_struct {
     bool enable_time_filtering;
     double start_time;
     double stop_time;
+    bool use_metadata_file;
 };
 
 inline bool operator>>= (const CORBA::Any& a, advanced_properties_struct& s) {
@@ -126,6 +128,9 @@ inline bool operator>>= (const CORBA::Any& a, advanced_properties_struct& s) {
     if (props.contains("stop_time")) {
         if (!(props["stop_time"] >>= s.stop_time)) return false;
     }
+    if (props.contains("use_metadata_file")) {
+        if (!(props["use_metadata_file"] >>= s.use_metadata_file)) return false;
+    }
     return true;
 }
 
@@ -163,6 +168,8 @@ inline void operator<<= (CORBA::Any& a, const advanced_properties_struct& s) {
     props["start_time"] = s.start_time;
  
     props["stop_time"] = s.stop_time;
+ 
+    props["use_metadata_file"] = s.use_metadata_file;
     a <<= props;
 }
 
@@ -198,6 +205,8 @@ inline bool operator== (const advanced_properties_struct& s1, const advanced_pro
     if (s1.start_time!=s2.start_time)
         return false;
     if (s1.stop_time!=s2.stop_time)
+        return false;
+    if (s1.use_metadata_file!=s2.use_metadata_file)
         return false;
     return true;
 }
@@ -532,6 +541,7 @@ struct file_status_struct_struct {
     short filesystem_type;
     std::string format;
     std::string error_msg;
+    std::string metadata_filename;
 };
 
 inline bool operator>>= (const CORBA::Any& a, file_status_struct_struct& s) {
@@ -556,6 +566,9 @@ inline bool operator>>= (const CORBA::Any& a, file_status_struct_struct& s) {
     if (props.contains("DCE:ebc0a4de-958f-4785-bbe4-03693c34f879")) {
         if (!(props["DCE:ebc0a4de-958f-4785-bbe4-03693c34f879"] >>= s.error_msg)) return false;
     }
+    if (props.contains("file_status_struct::metadata_filename")) {
+        if (!(props["file_status_struct::metadata_filename"] >>= s.metadata_filename)) return false;
+    }
     return true;
 }
 
@@ -573,6 +586,8 @@ inline void operator<<= (CORBA::Any& a, const file_status_struct_struct& s) {
     props["DCE:addfe635-bbef-4c9d-83c2-03dd149a3b49"] = s.format;
  
     props["DCE:ebc0a4de-958f-4785-bbe4-03693c34f879"] = s.error_msg;
+ 
+    props["file_status_struct::metadata_filename"] = s.metadata_filename;
     a <<= props;
 }
 
@@ -588,6 +603,8 @@ inline bool operator== (const file_status_struct_struct& s1, const file_status_s
     if (s1.format!=s2.format)
         return false;
     if (s1.error_msg!=s2.error_msg)
+        return false;
+    if (s1.metadata_filename!=s2.metadata_filename)
         return false;
     return true;
 }

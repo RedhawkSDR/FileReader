@@ -63,6 +63,8 @@
 #include <rh_utils.h>
 #include "Queue.hpp"
 
+#include "MetaDataParser.h"
+
 //#define _DEBUG_
 #define BLUEFILE_BLOCK_SIZE 512   // Exact size of fixed header
 #define WAV_HEADER_READ_SIZE 512        // Taking more than I need incase the RIFF headers are out of order
@@ -262,6 +264,13 @@ private:
 
     long running_read_total;
     std::vector<char> empty_packet_data;
+
+    //Metadata File Objects
+    bulkio::InShortPort *metadataQueue;
+    std::queue<size_t> packetSizeQueue;
+    //Metadata parser
+    MetaDataParser *MetaDataParser_i;
+
 
     //////////////////////
     // HELPER FUNCTIONS //

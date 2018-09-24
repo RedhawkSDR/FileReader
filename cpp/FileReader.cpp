@@ -90,6 +90,13 @@ void FileReader_i::initialize() throw (CF::LifeCycle::InitializeError, CORBA::Sy
 	center_frequency_d = STD_STRING_HELPER::HZ_string_to_number(center_frequency);
 	reconstruct_property_sri(current_sample_rate);
 	reconstruct_property_timestamp();
+
+	// In metadata file mode, we need a queue for the metadata and the metadata parser
+	// The metadata queue uses a bulkio port because it contains a queue for packets and SRI, this is just used as an internal data helper and is not actually a bulkio port
+	metadataQueue = new bulkio::InShortPort("metadataQueue");
+	metadataQueue->setMaxQueueDepth(1000000);
+	MetaDataParser_i = new MetaDataParser(metadataQueue,&packetSizeQueue);
+
 	// Call reset_throttle() to calculate throttle_rate_Bps, needed by restart_read_ahead_caching()
 	// The second call properly sets throttle_usleep based on packet_size, which is not set until restart_read_ahead_caching()
 	reset_throttle();
@@ -460,8 +467,9 @@ void FileReader_i::read_ahead_thread() {
 
 				//File Loop
 				boost::this_thread::interruption_point();
-				if (!fs_iter->error_msg.empty())
+				if (!fs_iter->error_msg.empty()) {
 					continue;
+				}
 
 				if (!filesystem.open_file(fs_iter->filename, false)) {
 					std::string error_msg = "ERROR: Cannot open file:  " + std::string(fs_iter->filename);
@@ -470,7 +478,34 @@ void FileReader_i::read_ahead_thread() {
 					continue;
 				}
 				opened_file = fs_iter->filename;
+				if (advanced_properties.use_metadata_file) {
+					std::cout << "Looking at Metadata file stuff" <<std::endl;
+					// Check that Metadata file is present
+					fs_iter->metadata_filename = fs_iter->filename+ ".metadata.xml";
+					if (!filesystem.open_file(fs_iter->metadata_filename, false)) {
+						std::string error_msg = "ERROR: Cannot open file:  " + std::string(fs_iter->metadata_filename);
+						std::cout << error_msg << std::endl;
+						fs_iter->error_msg = error_msg;
+						continue;
+					}
+					std::vector<char> metadata_xml_buffer;
+					unsigned int metdatadata_file_size = filesystem.file_size(fs_iter->metadata_filename);
+				    if (metdatadata_file_size< 10000000) {
+				    	metadata_xml_buffer.reserve(metdatadata_file_size);
+				    	filesystem.read(fs_iter->metadata_filename, &metadata_xml_buffer, metdatadata_file_size);
+				    	MetaDataParser_i->parseData(metadata_xml_buffer);
 
+				    } else {
+				    	//TODO - If metadata file is large read and parse in chucks.
+						std::string error_msg = "ERROR: Currently don't support metadata files larger than 10 Megabytes:  " + std::string(fs_iter->metadata_filename);
+						std::cout << error_msg << std::endl;
+						fs_iter->error_msg = error_msg;
+						continue;
+
+				    }
+					// Read Metdata file and parse
+
+				} //Done with metdatafile
 				bool first_packet = true;
 				bool last_packet = false;
 				unsigned long long read_bytes = fs_iter->file_size;
@@ -554,6 +589,16 @@ void FileReader_i::read_ahead_thread() {
 
 					size_t pkt_size = std::max(dd_ptr->bytes_per_sample,size_t(dd_ptr->bytes_per_sample*std::floor(packet_size/dd_ptr->bytes_per_sample)));
 					size_t read_size = size_t(std::min((unsigned long long )pkt_size,read_bytes));
+					// Adjust read_size if metdata mode
+					if (advanced_properties.use_metadata_file) {
+						size_t mySize = packetSizeQueue.front();
+						packetSizeQueue.pop();
+						read_size = size_t(std::min((unsigned long long )mySize,read_bytes));
+						if (read_size>packet_size) {
+							pkt->dataBuffer.reserve(read_size);
+						}
+					}
+
 					bool eos = ! filesystem.read(fs_iter->filename, & pkt->dataBuffer, read_size);
 
 					pkt->start_sample = running_read_total/dd_ptr->bytes_per_sample;
@@ -589,6 +634,9 @@ void FileReader_i::read_ahead_thread() {
 				} while (!last_packet);
 				opened_file = "";
 				filesystem.close_file(fs_iter->filename);
+
+
+
 
 			}
 		} while (advanced_properties.looping);
@@ -1018,8 +1066,29 @@ int FileReader_i::serviceFunction() {
         return NORMAL;
     }
 
+    //Grab Metadata
+    bulkio::InShortPort::dataTransfer *tmp;
+    size_t metaDataPacketSize=0;
+    if (advanced_properties.use_metadata_file) {
+    	tmp = metadataQueue->getPacket(bulkio::Const::NON_BLOCKING);
+        if (not tmp) { // No data is available
+              return NOOP;
+        }
+
+    	sriChanged = tmp->sriChanged;
+    	metaDataPacketSize = tmp->dataBuffer[0];
+    }
+
     // Retrieve cached data block
     shared_ptr_file_packet pkt = used_file_packets.pop();
+
+    if (advanced_properties.use_metadata_file) {
+		if (pkt->dataBuffer.size() !=metaDataPacketSize) {
+			LOG_FATAL(FileReader_i, "Metadata File Size does not equal Size of read data. Can't Handle This. ");
+			releaseObject();
+		}
+    }
+
 
     if(pkt->NO_MORE_DATA){
     	st_lock.unlock();
@@ -1080,6 +1149,8 @@ int FileReader_i::serviceFunction() {
 					current_sri.keywords[cur_pos] = property_sri.keywords[prop_pos];
 				}
 			}
+		} else if (advanced_properties.use_metadata_file) { //If using Metadata file, the SRI comes from that file
+			current_sri = tmp->SRI;
 		} else {
 			current_sri = property_sri;
 		}

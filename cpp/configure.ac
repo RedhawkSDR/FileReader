@@ -30,6 +30,11 @@ OSSIE_SDRROOT_AS_PREFIX
 
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 
+AX_LIB_EXPAT([1.95.8])
+if test x"$HAVE_EXPAT" = xno ; then
+  AC_MSG_ERROR([The Expat XML parser library and header files are required])
+fi
+
 # Dependencies
 PKG_CHECK_MODULES([PROJECTDEPS], [ossie >= 2.0 omniORB4 >= 4.1.0])
 PKG_CHECK_MODULES([INTERFACEDEPS], [bulkio >= 2.0])

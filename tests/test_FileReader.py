@@ -558,6 +558,59 @@ class ResourceTests(ossie.utils.testing.ScaComponentTestCase):
         print "........ PASSED\n"
         return
     
+    def testwithMetadata(self):
+        
+        #Define test files
+        dataFileIn = './siggendata/testData'
+        dataFileIn = './data_onestream/testdata.out'
+        
+        #Read in Data from Test File
+        size = os.path.getsize(dataFileIn)
+        with open (dataFileIn, 'rb') as dataIn:
+            data = list(struct.unpack('h'*(size/2), dataIn.read(size)))
+            
+        #Create Components and Connections
+        print "Launched Component"
+        comp = sb.launch('../FileReader.spd.xml')
+
+        #comp.advanced_properties.packet_size="10000"
+        comp.advanced_properties.throttle_rate = ""
+        comp.advanced_properties.use_metadata_file = True
+        comp.source_uri = dataFileIn       
+        comp.file_format = 'SHORT'
+        
+        sink = sb.DataSink()
+        comp.connect(sink, usesPortName='dataShort_out')
+        
+        #Start Components & Push Data
+        sb.start()
+        comp.playback_state = 'PLAY'
+        time.sleep(2)
+        readData = sink.getData()
+        sri = sink.sri()
+        self.assertEqual(sri.streamID, "test_streamID")
+
+        self.assertEqual(sri.keywords[0].id, "TEST_KW2")
+        self.assertEqual(any.from_any(sri.keywords[0].value), "2222")
+        self.assertEqual(sri.keywords[1].id, "TEST_KW1")
+        self.assertEqual(any.from_any(sri.keywords[1].value), 1111)
+        sb.stop()
+         
+        #Check that the input and output files are the same          
+        try:
+            self.assertEqual(data, readData)
+        except self.failureException as e:
+            comp.releaseObject()
+            sink.releaseObject()
+            raise e
+
+        #Release the components and remove the generated files
+        comp.releaseObject()
+        sink.releaseObject()
+         
+        print "........ PASSED\n"
+        return
+    
     def testUshortPortSriScalar(self):
         dataFileIn = './data.in'
         self.setupBasicSriTest(dataFileIn, 'dataUshort_out', 'USHORT')
