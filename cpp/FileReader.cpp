@@ -594,7 +594,7 @@ void FileReader_i::read_ahead_thread() {
 						size_t mySize = packetSizeQueue.front();
 						packetSizeQueue.pop();
 						read_size = size_t(std::min((unsigned long long )mySize,read_bytes));
-						if (read_size>packet_size) {
+						if (read_size>(unsigned long)packet_size) {
 							pkt->dataBuffer.reserve(read_size);
 						}
 					}
@@ -1067,7 +1067,7 @@ int FileReader_i::serviceFunction() {
     }
 
     //Grab Metadata
-    bulkio::InShortPort::dataTransfer *tmp;
+    bulkio::InShortPort::dataTransfer *tmp = 0;
     size_t metaDataPacketSize=0;
     if (advanced_properties.use_metadata_file) {
     	tmp = metadataQueue->getPacket(bulkio::Const::NON_BLOCKING);
@@ -1085,7 +1085,7 @@ int FileReader_i::serviceFunction() {
     if (advanced_properties.use_metadata_file) {
 		if (pkt->dataBuffer.size() !=metaDataPacketSize) {
 			LOG_FATAL(FileReader_i, "Metadata File Size does not equal Size of read data. Can't Handle This. ");
-			releaseObject();
+			stop();
 		}
     }
 
@@ -1129,12 +1129,16 @@ int FileReader_i::serviceFunction() {
             data_tstamp = pkt->tstamp;
         } else if (property_tstamp.tcmode >= 0) {
             data_tstamp = property_tstamp;
-        } else {
+        }
+        else {
             data_tstamp = get_current_timestamp();
         }
         throttle_tstamp = get_current_timestamp();
     }
-
+    // If we are using metadata file mode then the timecode is provided and will be used
+    if (advanced_properties.use_metadata_file) {
+       	data_tstamp = tmp->T;
+    }
     // sriChanged: every time the SRI needs to be updated
     if (sriChanged) {
         sriChanged = false;

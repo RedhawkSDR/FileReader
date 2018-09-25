@@ -586,7 +586,7 @@ class ResourceTests(ossie.utils.testing.ScaComponentTestCase):
         sb.start()
         comp.playback_state = 'PLAY'
         time.sleep(2)
-        readData = sink.getData()
+        readData,tstamps = sink.getData(tstamps=True)
         sri = sink.sri()
         self.assertEqual(sri.streamID, "test_streamID")
 
@@ -594,6 +594,17 @@ class ResourceTests(ossie.utils.testing.ScaComponentTestCase):
         self.assertEqual(any.from_any(sri.keywords[0].value), "2222")
         self.assertEqual(sri.keywords[1].id, "TEST_KW1")
         self.assertEqual(any.from_any(sri.keywords[1].value), 1111)
+        #print tstamps[0],tstamps[1]
+        self.assertEqual(tstamps[0][0], 0)
+        self.assertAlmostEqual(tstamps[0][1].twsec, 1537799012,10)
+        self.assertAlmostEqual(tstamps[0][1].tfsec, 0.721574068069458,10)
+        self.assertEqual(tstamps[1][0], 1000)
+        self.assertAlmostEqual(tstamps[1][1].twsec, 1537799012,10)
+        self.assertAlmostEqual(tstamps[1][1].tfsec, 0.721842050552368,10)
+        self.assertEqual(tstamps[2][0], 2000)
+        self.assertAlmostEqual(tstamps[2][1].twsec, 1537799012,10)
+        self.assertAlmostEqual(tstamps[2][1].tfsec, 0.721976041793823,10)
+        
         sb.stop()
          
         #Check that the input and output files are the same          
