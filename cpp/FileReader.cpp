@@ -133,7 +133,8 @@ void FileReader_i::advanced_propertiesChanged(const advanced_properties_struct *
 	// These properties affect the manner in which the file is read, so the restart_read_ahead_caching
 	// function should be called
 	if (oldValue->buffer_size != newValue->buffer_size || oldValue->packet_size != newValue->packet_size ||
-			oldValue->looping != newValue->looping || oldValue->looping_suppress_eos_until_stop != newValue->looping_suppress_eos_until_stop) {
+			oldValue->looping != newValue->looping || oldValue->looping_suppress_eos_until_stop != newValue->looping_suppress_eos_until_stop
+			|| oldValue->use_metadata_file != newValue->use_metadata_file) {
 		restart_read_ahead_caching();
 	}
 	// This property affects the SRI, so the reconstruct_property_sri function should be called
