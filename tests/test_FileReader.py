@@ -575,9 +575,9 @@ class ResourceTests(ossie.utils.testing.ScaComponentTestCase):
 
         #comp.advanced_properties.packet_size="10000"
         comp.advanced_properties.throttle_rate = ""
-        comp.advanced_properties.use_metadata_file = True
         comp.source_uri = dataFileIn       
         comp.file_format = 'SHORT'
+        comp.advanced_properties.use_metadata_file = True
         
         sink = sb.DataSink()
         comp.connect(sink, usesPortName='dataShort_out')
@@ -622,6 +622,57 @@ class ResourceTests(ossie.utils.testing.ScaComponentTestCase):
         print "........ PASSED\n"
         return
     
+    def testwithBadMetadataFile(self):
+        
+        #Define test files
+        dataFileIn = './data.in'
+        metadataFileIn = 'data.in.metadata.xml'
+        
+        #Create Test Data File if it doesn't exist
+        if not os.path.isfile(dataFileIn):
+            with open(dataFileIn, 'wb') as dataIn:
+                dataIn.write(os.urandom(1024))
+        #Define test files
+        
+        #Read in Data from Test File
+        size = os.path.getsize(dataFileIn)
+        with open (dataFileIn, 'rb') as dataIn:
+            data = list(struct.unpack('h'*(size/2), dataIn.read(size)))
+            
+        #Create Components and Connections
+        print "Launched Component"
+        comp = sb.launch('../FileReader.spd.xml')
+
+        #comp.advanced_properties.packet_size="10000"
+        comp.advanced_properties.throttle_rate = ""
+        comp.source_uri = dataFileIn       
+        comp.file_format = 'SHORT'
+        comp.advanced_properties.use_metadata_file = True
+        
+        sink = sb.DataSink()
+        comp.connect(sink, usesPortName='dataShort_out')
+        
+        #Start Components & Push Data
+        sb.start()
+        comp.playback_state = 'PLAY'
+        time.sleep(1)
+        
+        #Confirm Error in File Status
+        print "File Status"
+        fileStatus = comp.file_status
+        self.assertTrue(len(fileStatus)==1)
+        self.assertTrue("ERROR" in fileStatus[0]['DCE:ebc0a4de-958f-4785-bbe4-03693c34f879'])
+        self.assertTrue("Cannot open file" in fileStatus[0]['DCE:ebc0a4de-958f-4785-bbe4-03693c34f879'])
+        self.assertTrue(metadataFileIn in fileStatus[0]['DCE:ebc0a4de-958f-4785-bbe4-03693c34f879'])
+
+        sb.stop()
+         
+
+        #Release the components and remove the generated files
+        comp.releaseObject()
+        sink.releaseObject()
+        os.remove(dataFileIn) 
+
     def testUshortPortSriScalar(self):
         dataFileIn = './data.in'
         self.setupBasicSriTest(dataFileIn, 'dataUshort_out', 'USHORT')

@@ -480,7 +480,6 @@ void FileReader_i::read_ahead_thread() {
 				}
 				opened_file = fs_iter->filename;
 				if (advanced_properties.use_metadata_file) {
-					std::cout << "Looking at Metadata file stuff" <<std::endl;
 					// Check that Metadata file is present
 					fs_iter->metadata_filename = fs_iter->filename+ ".metadata.xml";
 					if (!filesystem.open_file(fs_iter->metadata_filename, false)) {
