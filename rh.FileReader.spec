@@ -46,8 +46,8 @@ Requires:       rh.RedhawkDevUtils >= 4.0
 BuildRequires:  rh.blueFileLib-devel >= 2.1
 Requires:       rh.blueFileLib >= 2.1
 
-BuildRequires:  expat-devel >= 1.9.8
-Requires:       expat >= 1.9.8
+BuildRequires:  expat-devel >= 1.95.8
+Requires:       expat >= 1.95.8
 
 # Interface requirements
 BuildRequires:  bulkioInterfaces >= 2.0
