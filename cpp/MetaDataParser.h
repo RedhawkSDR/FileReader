@@ -41,7 +41,8 @@ public:
     void endElement(const XML_Char *name);
     void charData(std::string data);
 private:
-
+    void reset();
+    void resetParser();
     void resetPacket();
     void resetSRI();
     bulkio::InShortPort *metadataQueue;
