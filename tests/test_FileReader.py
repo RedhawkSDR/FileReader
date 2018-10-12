@@ -561,7 +561,6 @@ class ResourceTests(ossie.utils.testing.ScaComponentTestCase):
     def testwithMetadata(self):
         
         #Define test files
-        dataFileIn = './siggendata/testData'
         dataFileIn = './data_onestream/testdata.out'
         
         #Read in Data from Test File
