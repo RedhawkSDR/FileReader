@@ -459,8 +459,14 @@ bool FileReader_i::populate_file_listing(const std::string& source) {
     std::vector<ABSTRACTED_FILE_IO::file_listing> fl;
     try{
         fl = filesystem.create_listing_from_source_uri(source);
-    }catch(...){};
+    } catch (...) {};
+    std::string metadata_suffix = ".metadata.xml";
     for (std::vector<ABSTRACTED_FILE_IO::file_listing>::iterator iter = fl.begin(); iter != fl.end(); iter++) {
+        // Check if metadata file and ignore if so
+        if (advanced_properties.use_metadata_file && iter->filename_full.length() >= metadata_suffix.length() ) {
+            if (iter->filename_full.compare(iter->filename_full.length()-metadata_suffix.length(), metadata_suffix.length(), metadata_suffix) == 0)
+                continue;
+        }
         file_status_struct_struct new_fs;
         new_fs.filename = iter->filename_full;
         new_fs.file_basename = iter->filename_basename;
