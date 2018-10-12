@@ -1293,13 +1293,28 @@ int FileReader_i::serviceFunction() {
         bool popped = true;
         while (popped) {
             shared_ptr_file_packet newPkt;
+            bulkio::InShortPort::dataTransfer *newMPkt = 0;
             popped = used_file_packets.tryPop(newPkt);
             if (popped) {
-                if (is_packet_in_range(newPkt)) {
+                if (pkt->NO_MORE_DATA || is_packet_in_range(newPkt)) {
                     used_file_packets.pushFront(newPkt);
                     break;
-                }
-                else {
+                } else if (advanced_properties.use_metadata_file) {
+                    // Must prune metadata as well
+                    newMPkt = metadataQueue->getPacket(bulkio::Const::NON_BLOCKING);
+                    if (newMPkt) {
+                        eos = newMPkt->EOS; // TODO - should it be this || newPkt->last_packet??
+                        available_file_packets.push(newPkt);
+                        delete newMPkt;
+                        newMPkt = 0;
+                        if (eos)
+                            break;
+                    } else {
+                        // couldn't prune associated metadata packet, so put data back and break
+                        used_file_packets.pushFront(newPkt);
+                        break;
+                    }
+                } else {
                     eos = newPkt->last_packet;
                     available_file_packets.push(newPkt);
                     if (eos)
