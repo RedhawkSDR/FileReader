@@ -18,6 +18,7 @@
 #
 
 import ossie.utils.testing
+from ossie.cf import CF
 import os
 from omniORB import any
 import time
@@ -571,6 +572,7 @@ class ResourceTests(ossie.utils.testing.ScaComponentTestCase):
         #Create Components and Connections
         print "Launched Component"
         comp = sb.launch('../FileReader.spd.xml')
+        #comp.log_level(CF.LogLevels.TRACE)
 
         #comp.advanced_properties.packet_size="10000"
         comp.advanced_properties.throttle_rate = ""
