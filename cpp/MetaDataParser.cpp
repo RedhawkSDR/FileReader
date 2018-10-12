@@ -18,7 +18,7 @@ void charDataWrapper(void *userData,const XML_Char *chardata,int len) {
 }
 
 MetaDataParser::MetaDataParser(bulkio::InShortPort *metadataQueuePtr,std::queue<size_t> *packetSizeQueuePtr) :
-        metadataQueue(metadataQueuePtr), packetSizeQueue(packetSizeQueuePtr), keywordCount(0) {
+        metadataQueue(metadataQueuePtr), packetSizeQueue(packetSizeQueuePtr), keywordCount(0), initialSri(true) {
     parser = XML_ParserCreate(NULL);
     resetPacket();
     resetSRI();
@@ -28,6 +28,8 @@ void MetaDataParser::reset() {
     resetParser();
     resetPacket();
     resetSRI();
+    keywordCount = 0;
+    initialSri = true;
 }
 
 void MetaDataParser::resetParser() {
@@ -91,7 +93,22 @@ void MetaDataParser::endElement(const XML_Char *name) {
         text.clear();
         elementStack.clear();
     } else if (currentElement.name=="sri") {
-        metadataQueue->pushSRI(currentSri);
+        bool sriChanged = initialSri;
+        while (!sriChanged && !currentElement.attributes.empty()){
+            if (currentElement.attributes.front().name == "new") {
+                if (currentElement.attributes.front().value=="TRUE" || currentElement.attributes.front().value=="True" || currentElement.attributes.front().value=="true") {
+                    sriChanged = true;
+                } else {
+                    sriChanged = false;
+                }
+                break;
+            }
+            currentElement.attributes.pop();
+        }
+        if (sriChanged) {
+            metadataQueue->pushSRI(currentSri);
+            initialSri = false;
+        }
         resetSRI();
     } else if (currentElement.name=="packet") {
         PortTypes::ShortSequence data_length;

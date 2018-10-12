@@ -52,6 +52,7 @@ private:
     std::vector<Element> elementStack;
     BULKIO::StreamSRI currentSri;
     unsigned int keywordCount;
+    bool initialSri;
     PacketData currentPacket;
     XML_Parser parser;
 
