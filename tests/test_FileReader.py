@@ -663,7 +663,7 @@ class ResourceTests(ossie.utils.testing.ScaComponentTestCase):
         fileStatus = comp.file_status
         self.assertTrue(len(fileStatus)==1)
         self.assertTrue("ERROR" in fileStatus[0]['DCE:ebc0a4de-958f-4785-bbe4-03693c34f879'])
-        self.assertTrue("Cannot open file" in fileStatus[0]['DCE:ebc0a4de-958f-4785-bbe4-03693c34f879'])
+        self.assertTrue("Cannot open metadata file" in fileStatus[0]['DCE:ebc0a4de-958f-4785-bbe4-03693c34f879'])
         self.assertTrue(metadataFileIn in fileStatus[0]['DCE:ebc0a4de-958f-4785-bbe4-03693c34f879'])
 
         sb.stop()

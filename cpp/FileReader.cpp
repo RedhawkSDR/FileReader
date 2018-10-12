@@ -82,6 +82,7 @@ void FileReader_i::constructor()
 
 void FileReader_i::initialize() throw (CF::LifeCycle::InitializeError, CORBA::SystemException)
 {
+    LOG_TRACE(FileReader_i,"FileReader_i::initialize - ENTER");
     FileReader_base::initialize();
     try {
         if(!filesystem.is_sca_file_manager_valid()){
@@ -139,6 +140,7 @@ void FileReader_i::stop() throw (CF::Resource::StopError, CORBA::SystemException
 
 void FileReader_i::advanced_propertiesChanged(const advanced_properties_struct *oldValue, const advanced_properties_struct *newValue) {
     exclusive_lock lock(service_thread_lock);
+    LOG_TRACE(FileReader_i,"FileReader_i::advanced_propertiesChanged - ENTER");
 
     // These properties affect the manner in which the file is read, so the restart_read_ahead_caching
     // function should be called
@@ -159,6 +161,7 @@ void FileReader_i::advanced_propertiesChanged(const advanced_properties_struct *
 
 void FileReader_i::source_uriChanged(const std::string *oldValue, const std::string *newValue) {
     exclusive_lock lock(service_thread_lock);
+    LOG_TRACE(FileReader_i,"FileReader_i::source_uriChanged - ENTER");
 
     if (*oldValue != *newValue) {
         try {
@@ -172,6 +175,7 @@ void FileReader_i::source_uriChanged(const std::string *oldValue, const std::str
 
 void FileReader_i::file_formatChanged(const std::string *oldValue, const std::string *newValue) {
     exclusive_lock lock(service_thread_lock);
+    LOG_TRACE(FileReader_i,"FileReader_i::file_formatChanged - ENTER");
 
     if (*oldValue != *newValue) {
         restart_read_ahead_caching();
@@ -181,6 +185,7 @@ void FileReader_i::file_formatChanged(const std::string *oldValue, const std::st
 
 void FileReader_i::sample_rateChanged(const std::string *oldValue, const std::string *newValue) {
     exclusive_lock lock(service_thread_lock);
+    LOG_TRACE(FileReader_i,"FileReader_i::sample_rateChanged - ENTER");
 
     if (*oldValue != *newValue) {
         if (file_format == "BLUEFILE") {
@@ -207,6 +212,13 @@ void FileReader_i::center_frequencyChanged(const std::string *oldValue, const st
 
 void FileReader_i::playback_stateChanged(const std::string *oldValue, const std::string *newValue) {
     exclusive_lock lock(service_thread_lock);
+    if (oldValue && newValue) {
+        LOG_TRACE(FileReader_i,"FileReader_i::playback_stateChanged - ENTER - oldValue="<<*oldValue<<"  newValue="<<*newValue);
+    } else if (newValue) {
+        LOG_TRACE(FileReader_i,"FileReader_i::playback_stateChanged - ENTER - newValue="<<*newValue);
+    } else {
+        LOG_TRACE(FileReader_i,"FileReader_i::playback_stateChanged - ENTER");
+    }
 
     if (*oldValue != *newValue) {
         if (playback_state == "STOP") {
@@ -250,6 +262,7 @@ void FileReader_i::default_sri_keywordsChanged(const std::vector<sri_keywords_st
 }
 
 void FileReader_i::restart_read_ahead_caching() {
+    LOG_TRACE(FileReader_i,"FileReader_i::restart_read_ahead_caching - ENTER");
     //Buffer Size
     packet_size = size_t(STD_STRING_HELPER::generic_string_to_number(advanced_properties.packet_size,"B",1024));
 
@@ -295,6 +308,7 @@ void FileReader_i::stop_cache_thread() {
 }
 
 void FileReader_i::start_cache_thread() {
+    LOG_TRACE(FileReader_i,"FileReader_i::start_cache_thread - ENTER");
     stop_cache_thread();
 
     size_t num_packets_in_buffer = std::max(size_t(1), size_t(buffer_size / packet_size));
@@ -465,25 +479,30 @@ bool FileReader_i::populate_file_listing(const std::string& source) {
 ////////////////////////////////////////////////////////////////////////////////
 
 void FileReader_i::read_ahead_thread() {
+    LOG_TRACE(FileReader_i,"FileReader_i::read_ahead_thread - ENTER");
 
     std::string opened_file;
 
     try{
         // Buffer File
         do {
+            LOG_TRACE(FileReader_i,"FileReader_i::read_ahead_thread do-loop while looping");
             exclusive_lock lock(file_listing_lock);
             // Main Thread Loop
             boost::this_thread::interruption_point();
             for (std::vector<file_status_struct_struct>::iterator fs_iter = file_status.begin(); fs_iter != file_status.end(); fs_iter++) {
+                LOG_TRACE(FileReader_i,"FileReader_i::read_ahead_thread for loop with file: "<<fs_iter->filename<<" and error: "<<fs_iter->error_msg);
 
                 //File Loop
                 boost::this_thread::interruption_point();
                 if (!fs_iter->error_msg.empty()) {
+                    LOG_TRACE(FileReader_i,"FileReader_i::read_ahead_thread for loop, file has error, continuing!");
                     continue;
                 }
                 if (!filesystem.open_file(fs_iter->filename, false)) {
-                    std::string error_msg = "ERROR: Cannot open file:  " + std::string(fs_iter->filename);
-                    std::cout << error_msg << std::endl;
+                    std::string error_msg = "ERROR: Cannot open data file:  " + std::string(fs_iter->filename);
+                    //std::cout << error_msg << std::endl;
+                    LOG_ERROR(FileReader_i,error_msg);
                     fs_iter->error_msg = error_msg;
                     continue;
                 }
@@ -492,8 +511,9 @@ void FileReader_i::read_ahead_thread() {
                     // Check that Metadata file is present
                     fs_iter->metadata_filename = fs_iter->filename+ ".metadata.xml";
                     if (!filesystem.open_file(fs_iter->metadata_filename, false)) {
-                        std::string error_msg = "ERROR: Cannot open file:  " + std::string(fs_iter->metadata_filename);
-                        std::cout << error_msg << std::endl;
+                        std::string error_msg = "ERROR: Cannot open metadata file:  " + std::string(fs_iter->metadata_filename);
+                        //std::cout << error_msg << std::endl;
+                        LOG_ERROR(FileReader_i,error_msg);
                         fs_iter->error_msg = error_msg;
                         filesystem.close_file(fs_iter->filename);
                         opened_file = "";
@@ -504,13 +524,16 @@ void FileReader_i::read_ahead_thread() {
                     if (metadata_file_size < 10000000) {
                         // Read Metdata file and parse
                         metadata_xml_buffer.reserve(metadata_file_size);
-                        filesystem.read(fs_iter->metadata_filename, &metadata_xml_buffer, metadata_file_size);
+                        bool success = filesystem.read(fs_iter->metadata_filename, &metadata_xml_buffer, metadata_file_size);
+                        LOG_TRACE(FileReader_i,"FileReader_i::read_ahead_thread - parsing metadata - read success="<<success<<" file size="<<metadata_file_size<<" xml buffer size="<<metadata_xml_buffer.size());
                         MetaDataParser_i->parseData(metadata_xml_buffer);
+                        //MetaDataParser(metadataQueue,&packetSizeQueue).parseData(metadata_xml_buffer);
                         filesystem.close_file(fs_iter->metadata_filename);
                     } else {
                         //TODO - If metadata file is large read and parse in chucks.
                         std::string error_msg = "ERROR: Currently don't support metadata files larger than 10 Megabytes:  " + std::string(fs_iter->metadata_filename);
-                        std::cout << error_msg << std::endl;
+                        //std::cout << error_msg << std::endl;
+                        LOG_ERROR(FileReader_i,error_msg);
                         fs_iter->error_msg = error_msg;
                         filesystem.close_file(fs_iter->metadata_filename);
                         filesystem.close_file(fs_iter->filename);
@@ -548,7 +571,8 @@ void FileReader_i::read_ahead_thread() {
 
                             if (!process_bluefile_fixedheader(pkt, &hdr)) {
                                 std::string error_msg = "ERROR: BLUE FILE FIXED HEADER IS INVALID FOR FILE:  " + std::string(fs_iter->filename);
-                                std::cout << error_msg << std::endl;
+                                //std::cout << error_msg << std::endl;
+                                LOG_ERROR(FileReader_i,error_msg);
                                 fs_iter->error_msg = error_msg;
                                 available_file_packets.push(pkt); // recycle pkt
                                 break;
@@ -568,7 +592,8 @@ void FileReader_i::read_ahead_thread() {
                             bool byteSwap = hdr.isHeaderEndianceReversed();
                             if (!process_bluefile_extendedheader(pkt, &e_hdr, isReal, byteSwap)) {
                                 std::string error_msg = "ERROR: BLUE FILE EXTENDED HEADER IS INVALID FOR FILE:  " + std::string(fs_iter->filename);
-                                std::cout << error_msg << std::endl;
+                                //std::cout << error_msg << std::endl;
+                                LOG_ERROR(FileReader_i,error_msg);
                                 fs_iter->error_msg = error_msg;
                                 available_file_packets.push(pkt); // recycle pkt
                                 break;
@@ -581,7 +606,8 @@ void FileReader_i::read_ahead_thread() {
                             WAV_HELPERS::wav_file_header wfh;
                             if (!process_wav_header(pkt, &wfh)) {
                                 std::string error_msg = "ERROR: WAV FILE HEADER IS INVALID FOR FILE:  " + std::string(fs_iter->filename);
-                                std::cout << error_msg << std::endl;
+                                //std::cout << error_msg << std::endl;
+                                LOG_ERROR(FileReader_i,error_msg);
                                 fs_iter->error_msg = error_msg;
                                 available_file_packets.push(pkt); // recycle pkt
                                 break;
@@ -595,7 +621,8 @@ void FileReader_i::read_ahead_thread() {
                     }
                     if (dd_ptr == NULL) {
                         std::string error_msg = "ERROR: DATA FORMAT IS INVALID FOR FILE:  " + std::string(fs_iter->filename);
-                        std::cout << error_msg << std::endl;
+                        //std::cout << error_msg << std::endl;
+                        LOG_ERROR(FileReader_i,error_msg);
                         fs_iter->error_msg = error_msg;
                         available_file_packets.push(pkt); // recycle pkt
                         break;
@@ -614,7 +641,7 @@ void FileReader_i::read_ahead_thread() {
                             if (read_bytes < read_size) {
                                 LOG_ERROR(FileReader_i,"Metadata and data files do not match! Not enough data remaining for all metadata packets. ("<<std::string(fs_iter->filename)<<")");
                                 std::string error_msg = "ERROR: Metadata and data files do not match! Not enough data remaining for all metadata packets." + std::string(fs_iter->filename);
-                                std::cout << error_msg << std::endl;
+                                //std::cout << error_msg << std::endl;
                                 fs_iter->error_msg = error_msg;
                                 //read_size = read_bytes;
                                 available_file_packets.push(pkt); // recycle pkt
@@ -626,7 +653,7 @@ void FileReader_i::read_ahead_thread() {
                         } else {
                             LOG_ERROR(FileReader_i,"Metadata and data files do not match! Data remains after processing all metadata packets. ("<<std::string(fs_iter->filename)<<")");
                             std::string error_msg = "ERROR: Metadata and data files do not match! Data remains after processing all metadata packets." + std::string(fs_iter->filename);
-                            std::cout << error_msg << std::endl;
+                            //std::cout << error_msg << std::endl;
                             fs_iter->error_msg = error_msg;
                             available_file_packets.push(pkt); // recycle pkt
                             break;
