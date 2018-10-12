@@ -1126,34 +1126,8 @@ int FileReader_i::serviceFunction() {
         return NORMAL;
     }
 
-    //Grab Metadata
-    bulkio::InShortPort::dataTransfer *metadataPkt = 0;
-    size_t metaDataPacketSize=0;
-    if (advanced_properties.use_metadata_file) {
-        metadataPkt = metadataQueue->getPacket(bulkio::Const::NON_BLOCKING);
-        if (not metadataPkt) { // No data is available
-            st_lock.unlock();
-            return NOOP;
-        }
-
-        sriChanged = metadataPkt->sriChanged;
-        metaDataPacketSize = metadataPkt->dataBuffer[0]; // Bytes of data associated with metadata
-    }
-
-    // Retrieve cached data block
+    // Retrieve cached data block -- this is a blocking call
     shared_ptr_file_packet pkt = used_file_packets.pop();
-
-    if (advanced_properties.use_metadata_file) {
-        if (pkt->dataBuffer.size() != metaDataPacketSize) {
-            LOG_FATAL(FileReader_i, "Size of data associated with metadata ("<<metaDataPacketSize<<" Bytes) does not equal the size of the incoming packet ("<<pkt->dataBuffer.size()<<" Bytes).");
-            st_lock.unlock();
-            available_file_packets.push(pkt);
-            delete metadataPkt;
-            stop(); // TODO -- is there a better way? Any negative side effects?
-            return NOOP;
-        }
-    }
-
 
     if(pkt->NO_MORE_DATA){
         st_lock.unlock();
@@ -1165,12 +1139,42 @@ int FileReader_i::serviceFunction() {
             configure(props);
         } catch(...){};
         available_file_packets.push(pkt);
-        delete metadataPkt;
         return NOOP;
     }
 
+    // Grab Metadata
+    bool eos = pkt->last_packet;
+    bulkio::InShortPort::dataTransfer *metadataPkt = 0;
+    size_t metaDataPacketSize=0;
+    if (advanced_properties.use_metadata_file) {
+        metadataPkt = metadataQueue->getPacket(bulkio::Const::NON_BLOCKING);
+        if (not metadataPkt) { // No metadata is available
+            LOG_ERROR(FileReader_i,"Configured to use metadata, but got data packet without associated metadata. Discarding data.");
+            st_lock.unlock();
+            available_file_packets.push(pkt);
+            return NORMAL;
+        }
+
+        metaDataPacketSize = metadataPkt->dataBuffer[0]; // Bytes of data associated with metadata
+
+        if (pkt->dataBuffer.size() != metaDataPacketSize) {
+            LOG_ERROR(FileReader_i, "Size of data associated with metadata ("<<metaDataPacketSize<<" Bytes) does not equal the size of the incoming data packet ("<<pkt->dataBuffer.size()<<" Bytes). Discarding both.");
+            st_lock.unlock();
+            available_file_packets.push(pkt);
+            delete metadataPkt;
+            return NORMAL;
+        }
+
+        eos = metadataPkt->EOS; // TODO - should this be an OR-equals? i.e. eos |= metadataPkt->EOS;
+        sriChanged = metadataPkt->sriChanged;
+        data_tstamp = metadataPkt->T;
+        //current_sri = metadataPkt->SRI; // done below to keep sri code together
+    }
+
+
     // New stream: every time a file has changed or when the state goes to PLAY
     if (pkt->first_packet) {
+
         // Always send SRI when files change
         sriChanged = true;
 
@@ -1180,35 +1184,37 @@ int FileReader_i::serviceFunction() {
             current_data_format = file_format;
         }
 
-        // Need to reconstruct here...
-        //    constructed sri depends on current_data_format and
-        //    will not reflect current_data_format unless called
-        //    here
-        reconstruct_property_sri(pkt->sample_rate);
+        // If we are using metadata file mode then the timecode and sri are provided and will be used
+        if (!advanced_properties.use_metadata_file) {
+            // Need to reconstruct here...
+            //    constructed sri depends on current_data_format and
+            //    will not reflect current_data_format unless called
+            //    here
+            reconstruct_property_sri(pkt->sample_rate);
 
-        // TIMESTAMP //
-        // Determine timestamp to use: either (1) system time (2) from properties (3) from file header
-        std::string currentSID = std::string(current_sri.streamID);
-        std::map<std::string,loop_info>::iterator os_iter = outstanding_streams.find(currentSID);
+            // TIMESTAMP //
+            // Determine timestamp to use: either (1) system time (2) from properties (3) from file header
+            //std::string currentSID = std::string(current_sri.streamID);
+            //std::map<std::string,loop_info>::iterator os_iter = outstanding_streams.find(currentSID);
 
-        if (pkt->valid_timestamp && !advanced_properties.ignore_header_metadata) {
-            data_tstamp = pkt->tstamp;
-        } else if (property_tstamp.tcmode >= 0) {
-            data_tstamp = property_tstamp;
-        } else {
-            data_tstamp = get_current_timestamp();
+            if (pkt->valid_timestamp && !advanced_properties.ignore_header_metadata) {
+                data_tstamp = pkt->tstamp;
+            } else if (property_tstamp.tcmode >= 0) {
+                data_tstamp = property_tstamp;
+            } else {
+                data_tstamp = get_current_timestamp();
+            }
         }
         throttle_tstamp = get_current_timestamp();
-    }
-    // If we are using metadata file mode then the timecode is provided and will be used
-    if (advanced_properties.use_metadata_file) {
-        data_tstamp = metadataPkt->T;
     }
     // sriChanged: every time the SRI needs to be updated
     if (sriChanged) {
         sriChanged = false;
 
-        if (pkt->valid_sri && !advanced_properties.ignore_header_metadata) {
+        if (advanced_properties.use_metadata_file) {
+            //If using Metadata file, the SRI comes from that file
+            current_sri = metadataPkt->SRI;
+        } else if (pkt->valid_sri && !advanced_properties.ignore_header_metadata) {
             current_sri = pkt->sri;
             if (advanced_properties.append_default_sri_keywords) {
                 size_t cur_kw_len = current_sri.keywords.length();
@@ -1218,8 +1224,6 @@ int FileReader_i::serviceFunction() {
                     current_sri.keywords[cur_pos] = property_sri.keywords[prop_pos];
                 }
             }
-        } else if (advanced_properties.use_metadata_file) { //If using Metadata file, the SRI comes from that file
-            current_sri = metadataPkt->SRI;
         } else {
             current_sri = property_sri;
         }
@@ -1246,7 +1250,7 @@ int FileReader_i::serviceFunction() {
     // Storing some variables for use after pushing the packet back on the available queue (which I want to do before the usleep commands)
     std::string streamID = std::string(current_sri.streamID);
     size_t sent_bytes = pkt->dataBuffer.size();
-    bool eos = pkt->last_packet;
+    //bool eos = pkt->last_packet || metadataPkt->EOS; // done above
     // Pushing data out of the port and placing that packet on the available queue for caching
     if (advanced_properties.debug_output) {
         std::cout << __PRETTY_FUNCTION__ << " pushPacket::  Packet Address: " << (void*) &pkt->dataBuffer[0] << ", Number Bytes: " << pkt->dataBuffer.size() <<
@@ -1256,7 +1260,7 @@ int FileReader_i::serviceFunction() {
     LOG_DEBUG(FileReader_i, " pushPacket::  Packet Address: " << (void*) &pkt->dataBuffer[0] << ", Number Bytes: " << pkt->dataBuffer.size() <<
             ", Timestamp(m/s/o/w/f): " << data_tstamp.tcmode << "/" << data_tstamp.tcstatus << "/" << data_tstamp.toff << "/" << (long) data_tstamp.twsec << "/" << (double) data_tstamp.tfsec <<
             ", EOS: " << eos << ", Stream ID: " << streamID);
-    bool packet_in_range = is_packet_in_range(pkt);
+    bool packet_in_range = is_packet_in_range(pkt); // TODO - update this method to be more precise. Currently operates on packet boundaries.
     if (packet_in_range) {
         switch (dth.get_dt_descriptor(current_data_format)->data_type) {
         case SUPPORTED_DATA_TYPE::_8a_: case SUPPORTED_DATA_TYPE::_8u_: case SUPPORTED_DATA_TYPE::_8t_:
