@@ -224,10 +224,12 @@ void MetaDataParser::endElement(const XML_Char *name) {
             } else if (currentElement.name =="streamID") {
                 currentPacket.streamID = CORBA::String_member(lastText.c_str());
             } else if (currentElement.name == "EOS") {
-                if (lastText =="false") {
+                if (lastText =="false" || lastText =="FALSE" || lastText =="False") {
                     currentPacket.EOS = CORBA::Boolean(false);
-                } else {
+                } else if (lastText =="true" || lastText =="TRUE" || lastText =="True"){
                     currentPacket.EOS = CORBA::Boolean(true);
+                } else {
+                	currentPacket.EOS = (atoi(lastText.c_str()) != 0);
                 }
             } else {
                 std::cout<<"ERROR: unknown packet sub-element with name "<<currentElement.name<<std::endl;
