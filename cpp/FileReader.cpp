@@ -1165,7 +1165,7 @@ int FileReader_i::serviceFunction() {
             return NORMAL;
         }
 
-        eos = metadataPkt->EOS; // TODO - should this be an OR-equals? i.e. eos |= metadataPkt->EOS;
+        eos = eos || metadataPkt->EOS;
         sriChanged = metadataPkt->sriChanged;
         data_tstamp = metadataPkt->T;
         //current_sri = metadataPkt->SRI; // done below to keep sri code together
@@ -1307,7 +1307,7 @@ int FileReader_i::serviceFunction() {
                     // Must prune metadata as well
                     newMPkt = metadataQueue->getPacket(bulkio::Const::NON_BLOCKING);
                     if (newMPkt) {
-                        eos = newMPkt->EOS; // TODO - should it be this || newPkt->last_packet??
+                        eos = newMPkt->EOS || newPkt->last_packet;
                         available_file_packets.push(newPkt);
                         delete newMPkt;
                         newMPkt = 0;
