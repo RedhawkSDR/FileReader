@@ -606,13 +606,30 @@ void FileReader_i::read_ahead_thread() {
 
                     size_t pkt_size = std::max(dd_ptr->bytes_per_sample,size_t(dd_ptr->bytes_per_sample*std::floor(packet_size/dd_ptr->bytes_per_sample)));
                     size_t read_size = size_t(std::min((unsigned long long )pkt_size,read_bytes));
-                    // Adjust read_size if metdata mode
-                    if (advanced_properties.use_metadata_file) {
-                        size_t mySize = packetSizeQueue.front();
-                        packetSizeQueue.pop();
-                        read_size = size_t(std::min((unsigned long long )mySize,read_bytes));
-                        if (read_size>(unsigned long)packet_size) {
-                            pkt->dataBuffer.reserve(read_size);
+                    // Adjust read_size if metadata mode and not reading BLUE or WAV file
+                    if (advanced_properties.use_metadata_file && !(file_format=="BLUEFILE" || file_format=="WAV")) {
+                        if (!packetSizeQueue.empty()) {
+                            read_size = packetSizeQueue.front();
+                            packetSizeQueue.pop();
+                            if (read_bytes < read_size) {
+                                LOG_ERROR(FileReader_i,"Metadata and data files do not match! Not enough data remaining for all metadata packets. ("<<std::string(fs_iter->filename)<<")");
+                                std::string error_msg = "ERROR: Metadata and data files do not match! Not enough data remaining for all metadata packets." + std::string(fs_iter->filename);
+                                std::cout << error_msg << std::endl;
+                                fs_iter->error_msg = error_msg;
+                                //read_size = read_bytes;
+                                available_file_packets.push(pkt); // recycle pkt
+                                break;
+                            }
+                            if (read_size > (unsigned long)packet_size) {
+                                pkt->dataBuffer.reserve(read_size);
+                            }
+                        } else {
+                            LOG_ERROR(FileReader_i,"Metadata and data files do not match! Data remains after processing all metadata packets. ("<<std::string(fs_iter->filename)<<")");
+                            std::string error_msg = "ERROR: Metadata and data files do not match! Data remains after processing all metadata packets." + std::string(fs_iter->filename);
+                            std::cout << error_msg << std::endl;
+                            fs_iter->error_msg = error_msg;
+                            available_file_packets.push(pkt); // recycle pkt
+                            break;
                         }
                     }
 
