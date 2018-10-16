@@ -207,6 +207,7 @@ public:
     void start() throw (CF::Resource::StartError, CORBA::SystemException);
     void stop() throw (CF::Resource::StopError, CORBA::SystemException);
     //void configure(const CF::Properties&) throw (CORBA::SystemException, CF::PropertySet::InvalidConfiguration, CF::PropertySet::PartialConfiguration);
+    void constructor();
     void initialize() throw (CF::LifeCycle::InitializeError, CORBA::SystemException);
 
 

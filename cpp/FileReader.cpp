@@ -46,6 +46,27 @@ FileReader_base(uuid, label) {
     data_tstamp = get_current_timestamp();
     //sets the buffer to the max size of the possible of a transfer that is going to converted to a max data type
     port_buffer.reserve(CORBA_MAX_TRANSFER_BYTES*sizeof(double)*2);
+}
+
+FileReader_i::~FileReader_i() {
+    stop_cache_thread();
+
+    delete metadataQueue;
+    delete MetaDataParser_i;
+
+}
+
+void FileReader_i::constructor()
+{
+    /***********************************************************************************
+     This is the RH constructor. All properties are properly initialized before this function is called
+    ***********************************************************************************/
+
+    // In metadata file mode, we need a queue for the metadata and the metadata parser
+    // The metadata queue uses a bulkio port because it contains a queue for packets and SRI, this is just used as an internal data helper and is not actually a bulkio port
+    metadataQueue = new bulkio::InShortPort("metadataQueue");
+    metadataQueue->setMaxQueueDepth(1000000);
+    MetaDataParser_i = new MetaDataParser(metadataQueue,&packetSizeQueue);
 
     //properties are not updated until callback function is called and they are explicitly
     addPropertyChangeListener("advanced_properties", this, &FileReader_i::advanced_propertiesChanged);
@@ -57,11 +78,6 @@ FileReader_base(uuid, label) {
     addPropertyChangeListener("default_timestamp", this, &FileReader_i::default_timestampChanged);
     addPropertyChangeListener("default_sri", this, &FileReader_i::default_sriChanged);
     addPropertyChangeListener("default_sri_keywords", this, &FileReader_i::default_sri_keywordsChanged);
-}
-
-FileReader_i::~FileReader_i() {
-    stop_cache_thread();
-
 }
 
 void FileReader_i::initialize() throw (CF::LifeCycle::InitializeError, CORBA::SystemException)
@@ -90,12 +106,6 @@ void FileReader_i::initialize() throw (CF::LifeCycle::InitializeError, CORBA::Sy
     center_frequency_d = STD_STRING_HELPER::HZ_string_to_number(center_frequency);
     reconstruct_property_sri(current_sample_rate);
     reconstruct_property_timestamp();
-
-    // In metadata file mode, we need a queue for the metadata and the metadata parser
-    // The metadata queue uses a bulkio port because it contains a queue for packets and SRI, this is just used as an internal data helper and is not actually a bulkio port
-    metadataQueue = new bulkio::InShortPort("metadataQueue");
-    metadataQueue->setMaxQueueDepth(1000000);
-    MetaDataParser_i = new MetaDataParser(metadataQueue,&packetSizeQueue);
 
     // Call reset_throttle() to calculate throttle_rate_Bps, needed by restart_read_ahead_caching()
     // The second call properly sets throttle_usleep based on packet_size, which is not set until restart_read_ahead_caching()
@@ -471,7 +481,6 @@ void FileReader_i::read_ahead_thread() {
                 if (!fs_iter->error_msg.empty()) {
                     continue;
                 }
-
                 if (!filesystem.open_file(fs_iter->filename, false)) {
                     std::string error_msg = "ERROR: Cannot open file:  " + std::string(fs_iter->filename);
                     std::cout << error_msg << std::endl;
@@ -486,26 +495,30 @@ void FileReader_i::read_ahead_thread() {
                         std::string error_msg = "ERROR: Cannot open file:  " + std::string(fs_iter->metadata_filename);
                         std::cout << error_msg << std::endl;
                         fs_iter->error_msg = error_msg;
+                        filesystem.close_file(fs_iter->filename);
+                        opened_file = "";
                         continue;
                     }
                     std::vector<char> metadata_xml_buffer;
-                    unsigned int metdatadata_file_size = filesystem.file_size(fs_iter->metadata_filename);
-                    if (metdatadata_file_size< 10000000) {
-                        metadata_xml_buffer.reserve(metdatadata_file_size);
-                        filesystem.read(fs_iter->metadata_filename, &metadata_xml_buffer, metdatadata_file_size);
+                    unsigned int metadata_file_size = filesystem.file_size(fs_iter->metadata_filename);
+                    if (metadata_file_size < 10000000) {
+                        // Read Metdata file and parse
+                        metadata_xml_buffer.reserve(metadata_file_size);
+                        filesystem.read(fs_iter->metadata_filename, &metadata_xml_buffer, metadata_file_size);
                         MetaDataParser_i->parseData(metadata_xml_buffer);
-
+                        filesystem.close_file(fs_iter->metadata_filename);
                     } else {
                         //TODO - If metadata file is large read and parse in chucks.
                         std::string error_msg = "ERROR: Currently don't support metadata files larger than 10 Megabytes:  " + std::string(fs_iter->metadata_filename);
                         std::cout << error_msg << std::endl;
                         fs_iter->error_msg = error_msg;
+                        filesystem.close_file(fs_iter->metadata_filename);
+                        filesystem.close_file(fs_iter->filename);
+                        opened_file = "";
                         continue;
-
                     }
-                    // Read Metdata file and parse
-
                 } //Done with metdatafile
+
                 bool first_packet = true;
                 bool last_packet = false;
                 unsigned long long read_bytes = fs_iter->file_size;
@@ -537,6 +550,7 @@ void FileReader_i::read_ahead_thread() {
                                 std::string error_msg = "ERROR: BLUE FILE FIXED HEADER IS INVALID FOR FILE:  " + std::string(fs_iter->filename);
                                 std::cout << error_msg << std::endl;
                                 fs_iter->error_msg = error_msg;
+                                available_file_packets.push(pkt); // recycle pkt
                                 break;
                             }
 
@@ -556,6 +570,7 @@ void FileReader_i::read_ahead_thread() {
                                 std::string error_msg = "ERROR: BLUE FILE EXTENDED HEADER IS INVALID FOR FILE:  " + std::string(fs_iter->filename);
                                 std::cout << error_msg << std::endl;
                                 fs_iter->error_msg = error_msg;
+                                available_file_packets.push(pkt); // recycle pkt
                                 break;
                             }
 
@@ -568,6 +583,7 @@ void FileReader_i::read_ahead_thread() {
                                 std::string error_msg = "ERROR: WAV FILE HEADER IS INVALID FOR FILE:  " + std::string(fs_iter->filename);
                                 std::cout << error_msg << std::endl;
                                 fs_iter->error_msg = error_msg;
+                                available_file_packets.push(pkt); // recycle pkt
                                 break;
                             }
                             filesystem.file_seek(fs_iter->filename, sizeof (wfh));
@@ -581,6 +597,7 @@ void FileReader_i::read_ahead_thread() {
                         std::string error_msg = "ERROR: DATA FORMAT IS INVALID FOR FILE:  " + std::string(fs_iter->filename);
                         std::cout << error_msg << std::endl;
                         fs_iter->error_msg = error_msg;
+                        available_file_packets.push(pkt); // recycle pkt
                         break;
                     }
                     fs_iter->format = dd_ptr->id;
@@ -611,9 +628,6 @@ void FileReader_i::read_ahead_thread() {
                     if(advanced_properties.looping && advanced_properties.looping_suppress_eos_until_stop)
                         pkt->last_packet = false;
 
-
-
-
                     // Convert to BULKIO Data format
 
                     // Byte swap
@@ -634,10 +648,6 @@ void FileReader_i::read_ahead_thread() {
                 } while (!last_packet);
                 opened_file = "";
                 filesystem.close_file(fs_iter->filename);
-
-
-
-
             }
         } while (advanced_properties.looping);
 
@@ -1067,25 +1077,30 @@ int FileReader_i::serviceFunction() {
     }
 
     //Grab Metadata
-    bulkio::InShortPort::dataTransfer *tmp = 0;
+    bulkio::InShortPort::dataTransfer *metadataPkt = 0;
     size_t metaDataPacketSize=0;
     if (advanced_properties.use_metadata_file) {
-        tmp = metadataQueue->getPacket(bulkio::Const::NON_BLOCKING);
-        if (not tmp) { // No data is available
-              return NOOP;
+        metadataPkt = metadataQueue->getPacket(bulkio::Const::NON_BLOCKING);
+        if (not metadataPkt) { // No data is available
+            st_lock.unlock();
+            return NOOP;
         }
 
-        sriChanged = tmp->sriChanged;
-        metaDataPacketSize = tmp->dataBuffer[0];
+        sriChanged = metadataPkt->sriChanged;
+        metaDataPacketSize = metadataPkt->dataBuffer[0]; // Bytes of data associated with metadata
     }
 
     // Retrieve cached data block
     shared_ptr_file_packet pkt = used_file_packets.pop();
 
     if (advanced_properties.use_metadata_file) {
-        if (pkt->dataBuffer.size() !=metaDataPacketSize) {
+        if (pkt->dataBuffer.size() != metaDataPacketSize) {
             LOG_FATAL(FileReader_i, "Size of data associated with metadata ("<<metaDataPacketSize<<" Bytes) does not equal the size of the incoming packet ("<<pkt->dataBuffer.size()<<" Bytes).");
-            stop();
+            st_lock.unlock();
+            available_file_packets.push(pkt);
+            delete metadataPkt;
+            stop(); // TODO -- is there a better way? Any negative side effects?
+            return NOOP;
         }
     }
 
@@ -1100,6 +1115,7 @@ int FileReader_i::serviceFunction() {
             configure(props);
         } catch(...){};
         available_file_packets.push(pkt);
+        delete metadataPkt;
         return NOOP;
     }
 
@@ -1129,15 +1145,14 @@ int FileReader_i::serviceFunction() {
             data_tstamp = pkt->tstamp;
         } else if (property_tstamp.tcmode >= 0) {
             data_tstamp = property_tstamp;
-        }
-        else {
+        } else {
             data_tstamp = get_current_timestamp();
         }
         throttle_tstamp = get_current_timestamp();
     }
     // If we are using metadata file mode then the timecode is provided and will be used
     if (advanced_properties.use_metadata_file) {
-        data_tstamp = tmp->T;
+        data_tstamp = metadataPkt->T;
     }
     // sriChanged: every time the SRI needs to be updated
     if (sriChanged) {
@@ -1154,7 +1169,7 @@ int FileReader_i::serviceFunction() {
                 }
             }
         } else if (advanced_properties.use_metadata_file) { //If using Metadata file, the SRI comes from that file
-            current_sri = tmp->SRI;
+            current_sri = metadataPkt->SRI;
         } else {
             current_sri = property_sri;
         }
@@ -1262,6 +1277,7 @@ int FileReader_i::serviceFunction() {
         outstanding_streams.insert(std::make_pair(streamID,loop_info(streamID,data_tstamp)));
 
     available_file_packets.push(pkt);
+    delete metadataPkt;
     st_lock.unlock();
 
     if (eos) {
