@@ -74,7 +74,7 @@
 #define CORBA_MAX_TRANSFER_BYTES omniORB::giopMaxMsgSize()
 
 namespace FILE_READER {
-	const std::string DEF_SOURCE_URI = "file://[path_to_local_file_or_dir] OR sca://[path_to_sca_file_or_dir]";
+    const std::string DEF_SOURCE_URI = "file://[path_to_local_file_or_dir] OR sca://[path_to_sca_file_or_dir]";
     enum FILESYSTEM_TYPE {
         LOCAL_FILESYSTEM = 0,
         SCA_FILESYSTEM = 1,
@@ -83,10 +83,10 @@ namespace FILE_READER {
 };
 
 namespace CF_KW_OPERATIONS {
-	const short NONE = -1;
-	const short COL_CHAN = 0;
-	const short COL  = 1;
-	const short CHAN = 2;
+    const short NONE = -1;
+    const short COL_CHAN = 0;
+    const short COL  = 1;
+    const short CHAN = 2;
 };
 
 namespace WAV_HELPERS {
@@ -131,34 +131,34 @@ namespace WAV_HELPERS {
 namespace FILE_READER_DOMAIN_MGR_HELPERS {
 
 inline CF::DomainManager_var domainManager_id_to_var(std::string id) {
-		CF::DomainManager_var domainMgr_var = CF::DomainManager::_nil();
-		CosNaming::BindingIterator_var it;
-		CosNaming::BindingList_var bl;
-		CosNaming::NamingContext_var context = CosNaming::NamingContext::_narrow(ossie::corba::InitialNamingContext());
-		context->list(100, bl, it);
-		for (unsigned int ii = 0; ii < bl->length(); ++ii) {
-			try {
-				std::string domString = std::string(bl[ii].binding_name[0].id) + "/" + std::string(bl[ii].binding_name[0].id);
-				CosNaming::Name_var cosName = omni::omniURI::stringToName(domString.c_str());
-				CORBA::Object_var bobj = context->resolve(cosName);
-				domainMgr_var = CF::DomainManager::_narrow(bobj);
-				if (id.empty() || id == std::string(domainMgr_var->identifier())){
-					return domainMgr_var;
-				}
-			} catch (...) {};
-		}
-		return domainMgr_var;
-	}
+        CF::DomainManager_var domainMgr_var = CF::DomainManager::_nil();
+        CosNaming::BindingIterator_var it;
+        CosNaming::BindingList_var bl;
+        CosNaming::NamingContext_var context = CosNaming::NamingContext::_narrow(ossie::corba::InitialNamingContext());
+        context->list(100, bl, it);
+        for (unsigned int ii = 0; ii < bl->length(); ++ii) {
+            try {
+                std::string domString = std::string(bl[ii].binding_name[0].id) + "/" + std::string(bl[ii].binding_name[0].id);
+                CosNaming::Name_var cosName = omni::omniURI::stringToName(domString.c_str());
+                CORBA::Object_var bobj = context->resolve(cosName);
+                domainMgr_var = CF::DomainManager::_narrow(bobj);
+                if (id.empty() || id == std::string(domainMgr_var->identifier())){
+                    return domainMgr_var;
+                }
+            } catch (...) {};
+        }
+        return domainMgr_var;
+    }
 
 };
 
 struct file_packet {
-	bool NO_MORE_DATA;
+    bool NO_MORE_DATA;
     // Identifiers for first and last packets (sos and eos)
     bool first_packet;
     bool last_packet;
 
-    // Must be filled in if (first_packet == true) 
+    // Must be filled in if (first_packet == true)
     std::string file_name;
     std::string file_basename;
     unsigned long long file_size; // in bytes
@@ -183,17 +183,17 @@ struct file_packet {
 };
 
 struct loop_info{
-	loop_info(){};
-	loop_info(const std::string &  _stream_id, const  BULKIO::PrecisionUTCTime& _tstamp ){
-		stream_id = _stream_id;
-		tstamp = _tstamp;
-	};
-	std::string stream_id;
-	BULKIO::PrecisionUTCTime tstamp;
+    loop_info(){};
+    loop_info(const std::string &  _stream_id, const  BULKIO::PrecisionUTCTime& _tstamp ){
+        stream_id = _stream_id;
+        tstamp = _tstamp;
+    };
+    std::string stream_id;
+    BULKIO::PrecisionUTCTime tstamp;
 };
 
 class FileReader_i : public FileReader_base {
-	ENABLE_LOGGING
+    ENABLE_LOGGING
 
     typedef boost::mutex::scoped_lock exclusive_lock;
     typedef boost::shared_ptr<file_packet> shared_ptr_file_packet;
@@ -253,7 +253,7 @@ private:
     size_t throttle_rate_Bps;
     size_t throttle_usleep;
 
-    // Packet Buffer Queues 
+    // Packet Buffer Queues
     ts_queue_file_packet used_file_packets;
     ts_queue_file_packet available_file_packets;
 
@@ -285,7 +285,7 @@ private:
     void reconstruct_property_sri(const double &sample_rate);
     void reconstruct_property_timestamp();
     void reset_throttle();
-    
+
     bool process_bluefile_fixedheader(shared_ptr_file_packet current_packet, blue::HeaderControlBlock* hcb);
     bool process_bluefile_extendedheader(shared_ptr_file_packet current_packet, blue::ExtendedHeader* e_hdr, bool isReal, bool byteSwap);
     bool process_wav_header(shared_ptr_file_packet current_packet, WAV_HELPERS::wav_file_header *wfh);
@@ -401,7 +401,7 @@ private:
         double fract, whole;
         fract = modf(from_time, &whole);
 
-        
+
         if (from_type == 1) {
             tstamp.tcmode = BULKIO::TCM_OFF;
             tstamp.tcstatus = BULKIO::TCS_VALID;

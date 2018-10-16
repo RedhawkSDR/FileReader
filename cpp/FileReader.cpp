@@ -66,48 +66,48 @@ FileReader_i::~FileReader_i() {
 
 void FileReader_i::initialize() throw (CF::LifeCycle::InitializeError, CORBA::SystemException)
 {
-	FileReader_base::initialize();
+    FileReader_base::initialize();
     try {
         if(!filesystem.is_sca_file_manager_valid()){
-			if (getDomainManager() && !CORBA::is_nil(getDomainManager()->getRef())) {
-				std::string dom_id = ossie::corba::returnString(getDomainManager()->getRef()->identifier());
-		    	CF::DomainManager_var dm = FILE_READER_DOMAIN_MGR_HELPERS::domainManager_id_to_var(dom_id);
-		    	if (!CORBA::is_nil(dm)){
-					filesystem.update_sca_file_manager(dm->fileMgr());
-					component_status.domain_name = ossie::corba::returnString(dm->name());
-		    	}
-			}
+            if (getDomainManager() && !CORBA::is_nil(getDomainManager()->getRef())) {
+                std::string dom_id = ossie::corba::returnString(getDomainManager()->getRef()->identifier());
+                CF::DomainManager_var dm = FILE_READER_DOMAIN_MGR_HELPERS::domainManager_id_to_var(dom_id);
+                if (!CORBA::is_nil(dm)){
+                    filesystem.update_sca_file_manager(dm->fileMgr());
+                    component_status.domain_name = ossie::corba::returnString(dm->name());
+                }
+            }
         }
     } catch (...) {
-    	LOG_DEBUG(FileReader_i,"Exception caught while attempting to update sca file manager");
-    	//component_status.domain_name = "(domainless)"; // leave as default value
+        LOG_DEBUG(FileReader_i,"Exception caught while attempting to update sca file manager");
+        //component_status.domain_name = "(domainless)"; // leave as default value
     };
 
     // Setup based on initial property values
     sample_rate_d = STD_STRING_HELPER::SPS_string_to_number(sample_rate);
     current_sample_rate = sample_rate_d;
     current_data_format = file_format;
-	center_frequency_d = STD_STRING_HELPER::HZ_string_to_number(center_frequency);
-	reconstruct_property_sri(current_sample_rate);
-	reconstruct_property_timestamp();
+    center_frequency_d = STD_STRING_HELPER::HZ_string_to_number(center_frequency);
+    reconstruct_property_sri(current_sample_rate);
+    reconstruct_property_timestamp();
 
-	// In metadata file mode, we need a queue for the metadata and the metadata parser
-	// The metadata queue uses a bulkio port because it contains a queue for packets and SRI, this is just used as an internal data helper and is not actually a bulkio port
-	metadataQueue = new bulkio::InShortPort("metadataQueue");
-	metadataQueue->setMaxQueueDepth(1000000);
-	MetaDataParser_i = new MetaDataParser(metadataQueue,&packetSizeQueue);
+    // In metadata file mode, we need a queue for the metadata and the metadata parser
+    // The metadata queue uses a bulkio port because it contains a queue for packets and SRI, this is just used as an internal data helper and is not actually a bulkio port
+    metadataQueue = new bulkio::InShortPort("metadataQueue");
+    metadataQueue->setMaxQueueDepth(1000000);
+    MetaDataParser_i = new MetaDataParser(metadataQueue,&packetSizeQueue);
 
-	// Call reset_throttle() to calculate throttle_rate_Bps, needed by restart_read_ahead_caching()
-	// The second call properly sets throttle_usleep based on packet_size, which is not set until restart_read_ahead_caching()
-	reset_throttle();
-	restart_read_ahead_caching();
-	reset_throttle();
+    // Call reset_throttle() to calculate throttle_rate_Bps, needed by restart_read_ahead_caching()
+    // The second call properly sets throttle_usleep based on packet_size, which is not set until restart_read_ahead_caching()
+    reset_throttle();
+    restart_read_ahead_caching();
+    reset_throttle();
 }
 
 void FileReader_i::start() throw (CF::Resource::StartError, CORBA::SystemException) {
 
     if(source_uri != FILE_READER::DEF_SOURCE_URI && file_status.size() == 0){
-    	throw CF::Resource::StartError(CF::CF_NOTSET,"NO FILES TO PROCESS");
+        throw CF::Resource::StartError(CF::CF_NOTSET,"NO FILES TO PROCESS");
     }
 
     FileReader_base::start();
@@ -116,163 +116,163 @@ void FileReader_i::start() throw (CF::Resource::StartError, CORBA::SystemExcepti
 }
 
 void FileReader_i::stop() throw (CF::Resource::StopError, CORBA::SystemException) {
-	FileReader_base::stop();
+    FileReader_base::stop();
 
-	try{
-    	CF::Properties props;
-    	props.length(1);
-    	props[0].id = "playback_state";
-    	props[0].value <<= CORBA::string_dup("STOP");
-    	configure(props);
-	} catch(...){};
+    try{
+        CF::Properties props;
+        props.length(1);
+        props[0].id = "playback_state";
+        props[0].value <<= CORBA::string_dup("STOP");
+        configure(props);
+    } catch(...){};
 }
 
 void FileReader_i::advanced_propertiesChanged(const advanced_properties_struct *oldValue, const advanced_properties_struct *newValue) {
-	exclusive_lock lock(service_thread_lock);
+    exclusive_lock lock(service_thread_lock);
 
-	// These properties affect the manner in which the file is read, so the restart_read_ahead_caching
-	// function should be called
-	if (oldValue->buffer_size != newValue->buffer_size || oldValue->packet_size != newValue->packet_size ||
-			oldValue->looping != newValue->looping || oldValue->looping_suppress_eos_until_stop != newValue->looping_suppress_eos_until_stop
-			|| oldValue->use_metadata_file != newValue->use_metadata_file) {
-		restart_read_ahead_caching();
-	}
-	// This property affects the SRI, so the reconstruct_property_sri function should be called
-	if (oldValue->center_frequency_keywords != newValue->center_frequency_keywords) {
-		reconstruct_property_sri(current_sample_rate);
-	}
-	// This property affects the throttle, so the reset_throttle function should be called
-	if (oldValue->throttle_rate != newValue->throttle_rate) {
-		reset_throttle();
-	}
+    // These properties affect the manner in which the file is read, so the restart_read_ahead_caching
+    // function should be called
+    if (oldValue->buffer_size != newValue->buffer_size || oldValue->packet_size != newValue->packet_size ||
+            oldValue->looping != newValue->looping || oldValue->looping_suppress_eos_until_stop != newValue->looping_suppress_eos_until_stop
+            || oldValue->use_metadata_file != newValue->use_metadata_file) {
+        restart_read_ahead_caching();
+    }
+    // This property affects the SRI, so the reconstruct_property_sri function should be called
+    if (oldValue->center_frequency_keywords != newValue->center_frequency_keywords) {
+        reconstruct_property_sri(current_sample_rate);
+    }
+    // This property affects the throttle, so the reset_throttle function should be called
+    if (oldValue->throttle_rate != newValue->throttle_rate) {
+        reset_throttle();
+    }
 }
 
 void FileReader_i::source_uriChanged(const std::string *oldValue, const std::string *newValue) {
-	exclusive_lock lock(service_thread_lock);
+    exclusive_lock lock(service_thread_lock);
 
-	if (*oldValue != *newValue) {
-		try {
-			restart_read_ahead_caching();
-		} catch(...) {
-			source_uri = *oldValue;
-			throw;
-		}
-	}
+    if (*oldValue != *newValue) {
+        try {
+            restart_read_ahead_caching();
+        } catch(...) {
+            source_uri = *oldValue;
+            throw;
+        }
+    }
 }
 
 void FileReader_i::file_formatChanged(const std::string *oldValue, const std::string *newValue) {
-	exclusive_lock lock(service_thread_lock);
+    exclusive_lock lock(service_thread_lock);
 
-	if (*oldValue != *newValue) {
-		restart_read_ahead_caching();
-	}
+    if (*oldValue != *newValue) {
+        restart_read_ahead_caching();
+    }
     reconstruct_property_sri(current_sample_rate);
 }
 
 void FileReader_i::sample_rateChanged(const std::string *oldValue, const std::string *newValue) {
-	exclusive_lock lock(service_thread_lock);
+    exclusive_lock lock(service_thread_lock);
 
-	if (*oldValue != *newValue) {
-		if (file_format == "BLUEFILE") {
-			LOG_WARN(FileReader_i, "Ignoring attempt to set sample rate while reading blue file");
-			sample_rate = *oldValue;
-		} else {
-			sample_rate_d = STD_STRING_HELPER::SPS_string_to_number(*newValue);
-			current_sample_rate = sample_rate_d;
-			reset_throttle();
-			reconstruct_property_sri(current_sample_rate);
-			restart_read_ahead_caching();
-		}
-	}
+    if (*oldValue != *newValue) {
+        if (file_format == "BLUEFILE") {
+            LOG_WARN(FileReader_i, "Ignoring attempt to set sample rate while reading blue file");
+            sample_rate = *oldValue;
+        } else {
+            sample_rate_d = STD_STRING_HELPER::SPS_string_to_number(*newValue);
+            current_sample_rate = sample_rate_d;
+            reset_throttle();
+            reconstruct_property_sri(current_sample_rate);
+            restart_read_ahead_caching();
+        }
+    }
 }
 
 void FileReader_i::center_frequencyChanged(const std::string *oldValue, const std::string *newValue) {
-	exclusive_lock lock(service_thread_lock);
+    exclusive_lock lock(service_thread_lock);
 
-	if (*oldValue != *newValue) {
-		center_frequency_d = STD_STRING_HELPER::HZ_string_to_number(*newValue);
-		reconstruct_property_sri(current_sample_rate);
-	}
+    if (*oldValue != *newValue) {
+        center_frequency_d = STD_STRING_HELPER::HZ_string_to_number(*newValue);
+        reconstruct_property_sri(current_sample_rate);
+    }
 }
 
 void FileReader_i::playback_stateChanged(const std::string *oldValue, const std::string *newValue) {
-	exclusive_lock lock(service_thread_lock);
+    exclusive_lock lock(service_thread_lock);
 
-	if (*oldValue != *newValue) {
-		if (playback_state == "STOP") {
-			std::vector<char> empty_vector;
-			restart_read_ahead_caching();
-			std::string curStreamID = std::string(current_sri.streamID);
-			if (!curStreamID.empty()) // if currently playing, send EOS
-			{
-				if (advanced_properties.debug_output) {
-					std::cout << __PRETTY_FUNCTION__ << " pushPacket:: Data Type: " << file_format << ", Packet Address: " << (void*) &curStreamID[0] << ", Number Bytes: " << 0 <<
-							", Timestamp(m/s/o/w/f): " << data_tstamp.tcmode << "/" << data_tstamp.tcstatus << "/" << data_tstamp.toff << "/" <<
-							data_tstamp.twsec << "/" << data_tstamp.tfsec << ", EOS: " << true << ", Stream ID: " << curStreamID << std::endl;
-				}
-				pushPacket((std::vector<CORBA::Char> *) & empty_vector, data_tstamp, true, curStreamID);
-				outstanding_streams.erase(curStreamID);
-			}
-			while(!outstanding_streams.empty()){
-				std::map<std::string,loop_info>::iterator os_iter = outstanding_streams.begin();
-				pushPacket((std::vector<CORBA::Char> *) & empty_vector, os_iter->second.tstamp, true, os_iter->second.stream_id);
-				outstanding_streams.erase(os_iter);
-			}
-		} else if (playback_state == "PLAY") {
-			reset_throttle();
-		}
-	}
+    if (*oldValue != *newValue) {
+        if (playback_state == "STOP") {
+            std::vector<char> empty_vector;
+            restart_read_ahead_caching();
+            std::string curStreamID = std::string(current_sri.streamID);
+            if (!curStreamID.empty()) // if currently playing, send EOS
+            {
+                if (advanced_properties.debug_output) {
+                    std::cout << __PRETTY_FUNCTION__ << " pushPacket:: Data Type: " << file_format << ", Packet Address: " << (void*) &curStreamID[0] << ", Number Bytes: " << 0 <<
+                            ", Timestamp(m/s/o/w/f): " << data_tstamp.tcmode << "/" << data_tstamp.tcstatus << "/" << data_tstamp.toff << "/" <<
+                            data_tstamp.twsec << "/" << data_tstamp.tfsec << ", EOS: " << true << ", Stream ID: " << curStreamID << std::endl;
+                }
+                pushPacket((std::vector<CORBA::Char> *) & empty_vector, data_tstamp, true, curStreamID);
+                outstanding_streams.erase(curStreamID);
+            }
+            while(!outstanding_streams.empty()){
+                std::map<std::string,loop_info>::iterator os_iter = outstanding_streams.begin();
+                pushPacket((std::vector<CORBA::Char> *) & empty_vector, os_iter->second.tstamp, true, os_iter->second.stream_id);
+                outstanding_streams.erase(os_iter);
+            }
+        } else if (playback_state == "PLAY") {
+            reset_throttle();
+        }
+    }
 }
 
 void FileReader_i::default_timestampChanged(const default_timestamp_struct *oldValue, const default_timestamp_struct *newValue) {
-	exclusive_lock lock(service_thread_lock);
-	reconstruct_property_timestamp();
+    exclusive_lock lock(service_thread_lock);
+    reconstruct_property_timestamp();
 }
 
 void FileReader_i::default_sriChanged(const default_sri_struct *oldValue, const default_sri_struct *newValue) {
-	exclusive_lock lock(service_thread_lock);
-	reconstruct_property_sri(current_sample_rate);
+    exclusive_lock lock(service_thread_lock);
+    reconstruct_property_sri(current_sample_rate);
 }
 
 void FileReader_i::default_sri_keywordsChanged(const std::vector<sri_keywords_struct_struct> *oldValue, const std::vector<sri_keywords_struct_struct> *newValue) {
-	exclusive_lock lock(service_thread_lock);
-	reconstruct_property_sri(current_sample_rate);
+    exclusive_lock lock(service_thread_lock);
+    reconstruct_property_sri(current_sample_rate);
 }
 
 void FileReader_i::restart_read_ahead_caching() {
-	//Buffer Size
-	packet_size = size_t(STD_STRING_HELPER::generic_string_to_number(advanced_properties.packet_size,"B",1024));
+    //Buffer Size
+    packet_size = size_t(STD_STRING_HELPER::generic_string_to_number(advanced_properties.packet_size,"B",1024));
 
-	if(packet_size <= 0){
-		if(throttle_rate_Bps > 0)
-			packet_size = size_t(std::max(1.0, current_sample_rate) * dth.get_dt_descriptor(current_data_format)->bytes_per_sample);
-		else {
-			packet_size = CORBA_MAX_TRANSFER_BYTES;
-		}
-	}
+    if(packet_size <= 0){
+        if(throttle_rate_Bps > 0)
+            packet_size = size_t(std::max(1.0, current_sample_rate) * dth.get_dt_descriptor(current_data_format)->bytes_per_sample);
+        else {
+            packet_size = CORBA_MAX_TRANSFER_BYTES;
+        }
+    }
 
-	// Keep on a 2B boundary - Note: it's safe to cast packet_size because previous conditional block ensures it's >= 0
-	if (static_cast<unsigned long>(packet_size) + PACKET_HEADER_RESERVED > CORBA_MAX_TRANSFER_BYTES ){
-		int mult = std::max(int(std::floor((CORBA_MAX_TRANSFER_BYTES - PACKET_HEADER_RESERVED)/16)),1);
-		packet_size = mult*16;
-	}
+    // Keep on a 2B boundary - Note: it's safe to cast packet_size because previous conditional block ensures it's >= 0
+    if (static_cast<unsigned long>(packet_size) + PACKET_HEADER_RESERVED > CORBA_MAX_TRANSFER_BYTES ){
+        int mult = std::max(int(std::floor((CORBA_MAX_TRANSFER_BYTES - PACKET_HEADER_RESERVED)/16)),1);
+        packet_size = mult*16;
+    }
 
-	buffer_size = size_t(STD_STRING_HELPER::generic_string_to_number(advanced_properties.buffer_size,"B",1024));
-	if (buffer_size < 0) {
-		buffer_size = 0;
-	}
+    buffer_size = size_t(STD_STRING_HELPER::generic_string_to_number(advanced_properties.buffer_size,"B",1024));
+    if (buffer_size < 0) {
+        buffer_size = 0;
+    }
 
-	stop_cache_thread();
+    stop_cache_thread();
 
-	if (!populate_file_listing(source_uri)) {
-		if (!populate_file_listing(source_uri+'/')) {
-			LOG_ERROR(FileReader_i, "SOURCE_URI IS INVALID!");
-			throw CF::PropertySet::InvalidConfiguration();
-		}
-		source_uri +='/';
-	}
+    if (!populate_file_listing(source_uri)) {
+        if (!populate_file_listing(source_uri+'/')) {
+            LOG_ERROR(FileReader_i, "SOURCE_URI IS INVALID!");
+            throw CF::PropertySet::InvalidConfiguration();
+        }
+        source_uri +='/';
+    }
 
-	start_cache_thread();
+    start_cache_thread();
 }
 
 void FileReader_i::stop_cache_thread() {
@@ -314,7 +314,7 @@ void FileReader_i::reset_throttle() {
     if (advanced_properties.throttle_rate.find("%SAMPLE_RATE%") != std::string::npos)
         throttle_rate_Bps = size_t(current_sample_rate * dth.get_dt_descriptor(current_data_format)->bytes_per_sample);
     else
-    	throttle_rate_Bps = size_t(STD_STRING_HELPER::generic_string_to_number(advanced_properties.throttle_rate,"BPS",1024));
+        throttle_rate_Bps = size_t(STD_STRING_HELPER::generic_string_to_number(advanced_properties.throttle_rate,"BPS",1024));
 
 
     throttle_usleep = 0;
@@ -357,26 +357,26 @@ void FileReader_i::reconstruct_property_sri(const double &sample_rate) {
     // If the sample rate passed in is valid, it will override
     // the default SRI sample rate and the property
     if (sample_rate > 0) {
-    	LOG_INFO(FileReader_i, "Using sample rate of " << sample_rate << " Sps")
-    	property_sri.xdelta = 1.0 / sample_rate;
+        LOG_INFO(FileReader_i, "Using sample rate of " << sample_rate << " Sps");
+        property_sri.xdelta = 1.0 / sample_rate;
     } else if (property_sri.xdelta <= 0) {
-    	LOG_INFO(FileReader_i, "Default SRI xdelta invalid, using sample rate property");
-    	property_sri.xdelta = 1.0 / sample_rate_d;
+        LOG_INFO(FileReader_i, "Default SRI xdelta invalid, using sample rate property");
+        property_sri.xdelta = 1.0 / sample_rate_d;
     } else {
-    	LOG_INFO(FileReader_i, "Using default SRI xdelta");
+        LOG_INFO(FileReader_i, "Using default SRI xdelta");
     }
 
     bool has_col_rf = false;
     bool has_chan_rf = false;
     property_sri.keywords.length(default_sri_keywords.size());
     for (size_t i = 0; i < default_sri_keywords.size(); i++) {
-    	if( default_sri_keywords[i].id == "COL_RF")
-    		has_col_rf = true;
-    	if( default_sri_keywords[i].id == "CHAN_RF")
-    		has_chan_rf = true;
-    	property_sri.keywords[i].id = default_sri_keywords[i].id.c_str();
-    	CORBA::Any value;
-    	if (default_sri_keywords[i].value_type == "STRING") {
+        if( default_sri_keywords[i].id == "COL_RF")
+            has_col_rf = true;
+        if( default_sri_keywords[i].id == "CHAN_RF")
+            has_chan_rf = true;
+        property_sri.keywords[i].id = default_sri_keywords[i].id.c_str();
+        CORBA::Any value;
+        if (default_sri_keywords[i].value_type == "STRING") {
             value <<= CORBA::string_dup(default_sri_keywords[i].value.c_str());
         } else if (default_sri_keywords[i].value_type == "BOOLEAN") {
             if (std::isdigit(default_sri_keywords[i].value[0]))
@@ -394,7 +394,7 @@ void FileReader_i::reconstruct_property_sri(const double &sample_rate) {
         } else if (default_sri_keywords[i].value_type == "FLOAT") {
             value <<= CORBA::Float(std::atof(default_sri_keywords[i].value.c_str()));
         } else if (default_sri_keywords[i].value_type == "DOUBLE") {
-        	value <<= CORBA::Double(std::atof(default_sri_keywords[i].value.c_str()));
+            value <<= CORBA::Double(std::atof(default_sri_keywords[i].value.c_str()));
         } else if (default_sri_keywords[i].value_type == "LONG") {
             value <<= CORBA::Long(std::atol(default_sri_keywords[i].value.c_str()));
         } else if (default_sri_keywords[i].value_type == "OCTET") {
@@ -409,17 +409,17 @@ void FileReader_i::reconstruct_property_sri(const double &sample_rate) {
 
     // Update Keywords
     if(!has_col_rf && (advanced_properties.center_frequency_keywords == CF_KW_OPERATIONS::COL_CHAN || advanced_properties.center_frequency_keywords == CF_KW_OPERATIONS::COL)){
-    	size_t cl  =  property_sri.keywords.length();
-    	 property_sri.keywords.length(cl+1);
-    	 property_sri.keywords[cl].id = "COL_RF";
-    	 property_sri.keywords[cl].value <<= CORBA::Double(center_frequency_d);
+        size_t cl  =  property_sri.keywords.length();
+        property_sri.keywords.length(cl+1);
+        property_sri.keywords[cl].id = "COL_RF";
+        property_sri.keywords[cl].value <<= CORBA::Double(center_frequency_d);
     }
     if(!has_chan_rf && (advanced_properties.center_frequency_keywords == CF_KW_OPERATIONS::COL_CHAN || advanced_properties.center_frequency_keywords == CF_KW_OPERATIONS::CHAN)){
-     	size_t cl  =  property_sri.keywords.length();
-     	 property_sri.keywords.length(cl+1);
-     	 property_sri.keywords[cl].id = "CHAN_RF";
-     	 property_sri.keywords[cl].value <<= CORBA::Double(center_frequency_d);
-     }
+        size_t cl  =  property_sri.keywords.length();
+        property_sri.keywords.length(cl+1);
+        property_sri.keywords[cl].id = "CHAN_RF";
+        property_sri.keywords[cl].value <<= CORBA::Double(center_frequency_d);
+    }
 
     sriChanged = true;
 }
@@ -431,10 +431,10 @@ void FileReader_i::reconstruct_property_sri(const double &sample_rate) {
 bool FileReader_i::populate_file_listing(const std::string& source) {
     file_status.clear();
     if(source_uri == FILE_READER::DEF_SOURCE_URI)
-    	return true;
+        return true;
     std::vector<ABSTRACTED_FILE_IO::file_listing> fl;
     try{
-    	fl = filesystem.create_listing_from_source_uri(source);
+        fl = filesystem.create_listing_from_source_uri(source);
     }catch(...){};
     for (std::vector<ABSTRACTED_FILE_IO::file_listing>::iterator iter = fl.begin(); iter != fl.end(); iter++) {
         file_status_struct_struct new_fs;
@@ -456,205 +456,205 @@ bool FileReader_i::populate_file_listing(const std::string& source) {
 
 void FileReader_i::read_ahead_thread() {
 
-	std::string opened_file;
+    std::string opened_file;
 
-	try{
-		// Buffer File
-		do {
-			exclusive_lock lock(file_listing_lock);
-			// Main Thread Loop
-			boost::this_thread::interruption_point();
-			for (std::vector<file_status_struct_struct>::iterator fs_iter = file_status.begin(); fs_iter != file_status.end(); fs_iter++) {
+    try{
+        // Buffer File
+        do {
+            exclusive_lock lock(file_listing_lock);
+            // Main Thread Loop
+            boost::this_thread::interruption_point();
+            for (std::vector<file_status_struct_struct>::iterator fs_iter = file_status.begin(); fs_iter != file_status.end(); fs_iter++) {
 
-				//File Loop
-				boost::this_thread::interruption_point();
-				if (!fs_iter->error_msg.empty()) {
-					continue;
-				}
+                //File Loop
+                boost::this_thread::interruption_point();
+                if (!fs_iter->error_msg.empty()) {
+                    continue;
+                }
 
-				if (!filesystem.open_file(fs_iter->filename, false)) {
-					std::string error_msg = "ERROR: Cannot open file:  " + std::string(fs_iter->filename);
-					std::cout << error_msg << std::endl;
-					fs_iter->error_msg = error_msg;
-					continue;
-				}
-				opened_file = fs_iter->filename;
-				if (advanced_properties.use_metadata_file) {
-					// Check that Metadata file is present
-					fs_iter->metadata_filename = fs_iter->filename+ ".metadata.xml";
-					if (!filesystem.open_file(fs_iter->metadata_filename, false)) {
-						std::string error_msg = "ERROR: Cannot open file:  " + std::string(fs_iter->metadata_filename);
-						std::cout << error_msg << std::endl;
-						fs_iter->error_msg = error_msg;
-						continue;
-					}
-					std::vector<char> metadata_xml_buffer;
-					unsigned int metdatadata_file_size = filesystem.file_size(fs_iter->metadata_filename);
-				    if (metdatadata_file_size< 10000000) {
-				    	metadata_xml_buffer.reserve(metdatadata_file_size);
-				    	filesystem.read(fs_iter->metadata_filename, &metadata_xml_buffer, metdatadata_file_size);
-				    	MetaDataParser_i->parseData(metadata_xml_buffer);
+                if (!filesystem.open_file(fs_iter->filename, false)) {
+                    std::string error_msg = "ERROR: Cannot open file:  " + std::string(fs_iter->filename);
+                    std::cout << error_msg << std::endl;
+                    fs_iter->error_msg = error_msg;
+                    continue;
+                }
+                opened_file = fs_iter->filename;
+                if (advanced_properties.use_metadata_file) {
+                    // Check that Metadata file is present
+                    fs_iter->metadata_filename = fs_iter->filename+ ".metadata.xml";
+                    if (!filesystem.open_file(fs_iter->metadata_filename, false)) {
+                        std::string error_msg = "ERROR: Cannot open file:  " + std::string(fs_iter->metadata_filename);
+                        std::cout << error_msg << std::endl;
+                        fs_iter->error_msg = error_msg;
+                        continue;
+                    }
+                    std::vector<char> metadata_xml_buffer;
+                    unsigned int metdatadata_file_size = filesystem.file_size(fs_iter->metadata_filename);
+                    if (metdatadata_file_size< 10000000) {
+                        metadata_xml_buffer.reserve(metdatadata_file_size);
+                        filesystem.read(fs_iter->metadata_filename, &metadata_xml_buffer, metdatadata_file_size);
+                        MetaDataParser_i->parseData(metadata_xml_buffer);
 
-				    } else {
-				    	//TODO - If metadata file is large read and parse in chucks.
-						std::string error_msg = "ERROR: Currently don't support metadata files larger than 10 Megabytes:  " + std::string(fs_iter->metadata_filename);
-						std::cout << error_msg << std::endl;
-						fs_iter->error_msg = error_msg;
-						continue;
+                    } else {
+                        //TODO - If metadata file is large read and parse in chucks.
+                        std::string error_msg = "ERROR: Currently don't support metadata files larger than 10 Megabytes:  " + std::string(fs_iter->metadata_filename);
+                        std::cout << error_msg << std::endl;
+                        fs_iter->error_msg = error_msg;
+                        continue;
 
-				    }
-					// Read Metdata file and parse
+                    }
+                    // Read Metdata file and parse
 
-				} //Done with metdatafile
-				bool first_packet = true;
-				bool last_packet = false;
-				unsigned long long read_bytes = fs_iter->file_size;
+                } //Done with metdatafile
+                bool first_packet = true;
+                bool last_packet = false;
+                unsigned long long read_bytes = fs_iter->file_size;
 
-				SUPPORTED_DATA_TYPE::data_description* dd_ptr = dth.get_dt_descriptor(file_format);
-				do {
-					boost::this_thread::interruption_point();
-					shared_ptr_file_packet pkt = available_file_packets.pop();
-					pkt->NO_MORE_DATA = false;
-					pkt->file_name = fs_iter->filename;
-					pkt->file_basename = fs_iter->file_basename;
-					pkt->file_size = fs_iter->file_size;
-					pkt->data_format = "";
-					// If first packet, process any headers
-					pkt->first_packet = first_packet;
-					pkt->valid_sri = false;
-					pkt->sri.keywords.length(0);
-					pkt->valid_timestamp = false;
-					pkt->sample_rate = 0;
-					if (first_packet) {
-						filesystem.file_seek(fs_iter->filename,0);
-						running_read_total = 0;
+                SUPPORTED_DATA_TYPE::data_description* dd_ptr = dth.get_dt_descriptor(file_format);
+                do {
+                    boost::this_thread::interruption_point();
+                    shared_ptr_file_packet pkt = available_file_packets.pop();
+                    pkt->NO_MORE_DATA = false;
+                    pkt->file_name = fs_iter->filename;
+                    pkt->file_basename = fs_iter->file_basename;
+                    pkt->file_size = fs_iter->file_size;
+                    pkt->data_format = "";
+                    // If first packet, process any headers
+                    pkt->first_packet = first_packet;
+                    pkt->valid_sri = false;
+                    pkt->sri.keywords.length(0);
+                    pkt->valid_timestamp = false;
+                    pkt->sample_rate = 0;
+                    if (first_packet) {
+                        filesystem.file_seek(fs_iter->filename,0);
+                        running_read_total = 0;
 
-						if (file_format == "BLUEFILE") {
-							filesystem.read(fs_iter->filename, &pkt->dataBuffer, BLUEFILE_BLOCK_SIZE);
-							blue::HeaderControlBlock hdr;
+                        if (file_format == "BLUEFILE") {
+                            filesystem.read(fs_iter->filename, &pkt->dataBuffer, BLUEFILE_BLOCK_SIZE);
+                            blue::HeaderControlBlock hdr;
 
-							if (!process_bluefile_fixedheader(pkt, &hdr)) {
-								std::string error_msg = "ERROR: BLUE FILE FIXED HEADER IS INVALID FOR FILE:  " + std::string(fs_iter->filename);
-								std::cout << error_msg << std::endl;
-								fs_iter->error_msg = error_msg;
-								break;
-							}
+                            if (!process_bluefile_fixedheader(pkt, &hdr)) {
+                                std::string error_msg = "ERROR: BLUE FILE FIXED HEADER IS INVALID FOR FILE:  " + std::string(fs_iter->filename);
+                                std::cout << error_msg << std::endl;
+                                fs_iter->error_msg = error_msg;
+                                break;
+                            }
 
-							// Check whether or not the data is real for determining
-							// COL_RF and IF to adhere to FS/4 rule
-							bool isReal = true;
+                            // Check whether or not the data is real for determining
+                            // COL_RF and IF to adhere to FS/4 rule
+                            bool isReal = true;
 
-							if (hdr.getFormatCode()[0] == 'C') {
-								isReal = false;
-							}
+                            if (hdr.getFormatCode()[0] == 'C') {
+                                isReal = false;
+                            }
 
-							filesystem.file_seek(fs_iter->filename, (unsigned long long) hdr.getExtStart() * BLUEFILE_BLOCK_SIZE);
-							filesystem.read(fs_iter->filename, &pkt->dataBuffer, hdr.getExtSize());
-							blue::ExtendedHeader e_hdr;
+                            filesystem.file_seek(fs_iter->filename, (unsigned long long) hdr.getExtStart() * BLUEFILE_BLOCK_SIZE);
+                            filesystem.read(fs_iter->filename, &pkt->dataBuffer, hdr.getExtSize());
+                            blue::ExtendedHeader e_hdr;
                             bool byteSwap = hdr.isHeaderEndianceReversed();
-							if (!process_bluefile_extendedheader(pkt, &e_hdr, isReal, byteSwap)) {
-								std::string error_msg = "ERROR: BLUE FILE EXTENDED HEADER IS INVALID FOR FILE:  " + std::string(fs_iter->filename);
-								std::cout << error_msg << std::endl;
-								fs_iter->error_msg = error_msg;
-								break;
-							}
+                            if (!process_bluefile_extendedheader(pkt, &e_hdr, isReal, byteSwap)) {
+                                std::string error_msg = "ERROR: BLUE FILE EXTENDED HEADER IS INVALID FOR FILE:  " + std::string(fs_iter->filename);
+                                std::cout << error_msg << std::endl;
+                                fs_iter->error_msg = error_msg;
+                                break;
+                            }
 
-							filesystem.file_seek(fs_iter->filename, hdr.getDataStart());
-							read_bytes = hdr.getDataSize();
-						} else if (file_format == "WAV") {
-							filesystem.read(fs_iter->filename, & pkt->dataBuffer, WAV_HEADER_READ_SIZE);
-							WAV_HELPERS::wav_file_header wfh;
-							if (!process_wav_header(pkt, &wfh)) {
-								std::string error_msg = "ERROR: WAV FILE HEADER IS INVALID FOR FILE:  " + std::string(fs_iter->filename);
-								std::cout << error_msg << std::endl;
-								fs_iter->error_msg = error_msg;
-								break;
-							}
-							filesystem.file_seek(fs_iter->filename, sizeof (wfh));
-							read_bytes = wfh.data.chunk_length;
-						}
-						first_packet = false;
-						if (!pkt->data_format.empty())
-							dd_ptr = dth.get_dt_descriptor(pkt->data_format);
-					}
-					if (dd_ptr == NULL) {
-						std::string error_msg = "ERROR: DATA FORMAT IS INVALID FOR FILE:  " + std::string(fs_iter->filename);
-						std::cout << error_msg << std::endl;
-						fs_iter->error_msg = error_msg;
-						break;
-					}
-					fs_iter->format = dd_ptr->id;
+                            filesystem.file_seek(fs_iter->filename, hdr.getDataStart());
+                            read_bytes = hdr.getDataSize();
+                        } else if (file_format == "WAV") {
+                            filesystem.read(fs_iter->filename, & pkt->dataBuffer, WAV_HEADER_READ_SIZE);
+                            WAV_HELPERS::wav_file_header wfh;
+                            if (!process_wav_header(pkt, &wfh)) {
+                                std::string error_msg = "ERROR: WAV FILE HEADER IS INVALID FOR FILE:  " + std::string(fs_iter->filename);
+                                std::cout << error_msg << std::endl;
+                                fs_iter->error_msg = error_msg;
+                                break;
+                            }
+                            filesystem.file_seek(fs_iter->filename, sizeof (wfh));
+                            read_bytes = wfh.data.chunk_length;
+                        }
+                        first_packet = false;
+                        if (!pkt->data_format.empty())
+                            dd_ptr = dth.get_dt_descriptor(pkt->data_format);
+                    }
+                    if (dd_ptr == NULL) {
+                        std::string error_msg = "ERROR: DATA FORMAT IS INVALID FOR FILE:  " + std::string(fs_iter->filename);
+                        std::cout << error_msg << std::endl;
+                        fs_iter->error_msg = error_msg;
+                        break;
+                    }
+                    fs_iter->format = dd_ptr->id;
 
-					pkt->file_position = filesystem.file_tell(fs_iter->filename);
+                    pkt->file_position = filesystem.file_tell(fs_iter->filename);
 
-					size_t pkt_size = std::max(dd_ptr->bytes_per_sample,size_t(dd_ptr->bytes_per_sample*std::floor(packet_size/dd_ptr->bytes_per_sample)));
-					size_t read_size = size_t(std::min((unsigned long long )pkt_size,read_bytes));
-					// Adjust read_size if metdata mode
-					if (advanced_properties.use_metadata_file) {
-						size_t mySize = packetSizeQueue.front();
-						packetSizeQueue.pop();
-						read_size = size_t(std::min((unsigned long long )mySize,read_bytes));
-						if (read_size>(unsigned long)packet_size) {
-							pkt->dataBuffer.reserve(read_size);
-						}
-					}
+                    size_t pkt_size = std::max(dd_ptr->bytes_per_sample,size_t(dd_ptr->bytes_per_sample*std::floor(packet_size/dd_ptr->bytes_per_sample)));
+                    size_t read_size = size_t(std::min((unsigned long long )pkt_size,read_bytes));
+                    // Adjust read_size if metdata mode
+                    if (advanced_properties.use_metadata_file) {
+                        size_t mySize = packetSizeQueue.front();
+                        packetSizeQueue.pop();
+                        read_size = size_t(std::min((unsigned long long )mySize,read_bytes));
+                        if (read_size>(unsigned long)packet_size) {
+                            pkt->dataBuffer.reserve(read_size);
+                        }
+                    }
 
-					bool eos = ! filesystem.read(fs_iter->filename, & pkt->dataBuffer, read_size);
+                    bool eos = ! filesystem.read(fs_iter->filename, & pkt->dataBuffer, read_size);
 
-					pkt->start_sample = running_read_total/dd_ptr->bytes_per_sample;
-					running_read_total += read_size;
-					pkt->stop_sample = running_read_total/dd_ptr->bytes_per_sample - 1;
+                    pkt->start_sample = running_read_total/dd_ptr->bytes_per_sample;
+                    running_read_total += read_size;
+                    pkt->stop_sample = running_read_total/dd_ptr->bytes_per_sample - 1;
 
-					read_bytes -= pkt->dataBuffer.size();
-					last_packet = eos || (read_bytes <= 0);
-					pkt->last_packet = last_packet;
-					if(advanced_properties.looping && advanced_properties.looping_suppress_eos_until_stop)
-						pkt->last_packet = false;
-
-
-
-
-					// Convert to BULKIO Data format
-
-					// Byte swap
-					if (dd_ptr->endian == SUPPORTED_DATA_TYPE::_byte_swap_) {
-						pkt->dataBuffer.resize(2.0 * std::ceil(float(pkt->dataBuffer.size())/2.0));
-						if (dd_ptr->bytes_per_element == sizeof (uint16_t)) {
-							std::vector<uint16_t> *svp = (std::vector<uint16_t> *) & pkt->dataBuffer;
-							std::transform(svp->begin(), svp->end(), svp->begin(), Byte_Swap16<uint16_t>);
-						} else if (dd_ptr->bytes_per_element == sizeof (uint32_t)) {
-							std::vector<uint32_t> *svp = (std::vector<uint32_t> *) & pkt->dataBuffer;
-							std::transform(svp->begin(), svp->end(), svp->begin(), Byte_Swap32<uint32_t>);
-						} else if (dd_ptr->bytes_per_element == sizeof (uint64_t)) {
-							std::vector<uint64_t> *svp = (std::vector<uint64_t> *) & pkt->dataBuffer;
-							std::transform(svp->begin(), svp->end(), svp->begin(), Byte_Swap32<uint64_t>);
-						}
-					}
-					used_file_packets.push(pkt);
-				} while (!last_packet);
-				opened_file = "";
-				filesystem.close_file(fs_iter->filename);
+                    read_bytes -= pkt->dataBuffer.size();
+                    last_packet = eos || (read_bytes <= 0);
+                    pkt->last_packet = last_packet;
+                    if(advanced_properties.looping && advanced_properties.looping_suppress_eos_until_stop)
+                        pkt->last_packet = false;
 
 
 
 
-			}
-		} while (advanced_properties.looping);
+                    // Convert to BULKIO Data format
 
-		shared_ptr_file_packet pkt = available_file_packets.pop();
-		pkt->NO_MORE_DATA = true;
-		used_file_packets.push(pkt);
-	} catch (boost::thread_interrupted){
-		if (!opened_file.empty())
-			filesystem.close_file(opened_file);
-	};
+                    // Byte swap
+                    if (dd_ptr->endian == SUPPORTED_DATA_TYPE::_byte_swap_) {
+                        pkt->dataBuffer.resize(2.0 * std::ceil(float(pkt->dataBuffer.size())/2.0));
+                        if (dd_ptr->bytes_per_element == sizeof (uint16_t)) {
+                            std::vector<uint16_t> *svp = (std::vector<uint16_t> *) & pkt->dataBuffer;
+                            std::transform(svp->begin(), svp->end(), svp->begin(), Byte_Swap16<uint16_t>);
+                        } else if (dd_ptr->bytes_per_element == sizeof (uint32_t)) {
+                            std::vector<uint32_t> *svp = (std::vector<uint32_t> *) & pkt->dataBuffer;
+                            std::transform(svp->begin(), svp->end(), svp->begin(), Byte_Swap32<uint32_t>);
+                        } else if (dd_ptr->bytes_per_element == sizeof (uint64_t)) {
+                            std::vector<uint64_t> *svp = (std::vector<uint64_t> *) & pkt->dataBuffer;
+                            std::transform(svp->begin(), svp->end(), svp->begin(), Byte_Swap32<uint64_t>);
+                        }
+                    }
+                    used_file_packets.push(pkt);
+                } while (!last_packet);
+                opened_file = "";
+                filesystem.close_file(fs_iter->filename);
+
+
+
+
+            }
+        } while (advanced_properties.looping);
+
+        shared_ptr_file_packet pkt = available_file_packets.pop();
+        pkt->NO_MORE_DATA = true;
+        used_file_packets.push(pkt);
+    } catch (boost::thread_interrupted){
+        if (!opened_file.empty())
+            filesystem.close_file(opened_file);
+    };
 }
 
 
 bool FileReader_i::process_bluefile_fixedheader(shared_ptr_file_packet current_packet, blue::HeaderControlBlock* hcb) {
     *hcb = blue::HeaderControlBlock((const blue::hcb_s *) & current_packet->dataBuffer[0]);
     if (hcb->validate(false) != 0) {
-    	return false;
+        return false;
     }
 
     std::string format_code = hcb->getFormatCode();
@@ -710,13 +710,13 @@ bool FileReader_i::process_bluefile_fixedheader(shared_ptr_file_packet current_p
     std::vector<std::string> kwn = hcb->getKeywordNames();
     double tc_prec = 0;
     for (std::vector<std::string>::iterator keyIter = kwn.begin(); keyIter != kwn.end(); keyIter++) {
-    	// if TC_PREC, store value for timestamp creation and DO NOT add to SRI keywords
-    	if ( *keyIter == "TC_PREC") {
+        // if TC_PREC, store value for timestamp creation and DO NOT add to SRI keywords
+        if ( *keyIter == "TC_PREC") {
             tc_prec = std::atof(hcb->getKeywordValue(*keyIter).c_str());
-    		LOG_DEBUG(FileReader_i,"Using TC_PREC keyword in BLUE file header for extra timecode precision ("<<tc_prec<<".");
-    		LOG_DEBUG(FileReader_i,"TC_PREC keyword in BLUE file header is NOT added to SRI keywords.");
-    		continue;
-    	}
+            LOG_DEBUG(FileReader_i,"Using TC_PREC keyword in BLUE file header for extra timecode precision ("<<tc_prec<<".");
+            LOG_DEBUG(FileReader_i,"TC_PREC keyword in BLUE file header is NOT added to SRI keywords.");
+            continue;
+        }
         size_t cur_kw_size = current_packet->sri.keywords.length();
         current_packet->sri.keywords.length(cur_kw_size + 1);
         current_packet->sri.keywords[cur_kw_size].id = keyIter->c_str();
@@ -731,8 +731,8 @@ bool FileReader_i::process_bluefile_fixedheader(shared_ptr_file_packet current_p
         current_packet->tstamp.tfsec += tc_prec;
         current_packet->valid_timestamp = true;
     }
-    
-    
+
+
 
 
 //    size_t block_size = sizeof(hcb);
@@ -780,22 +780,22 @@ bool FileReader_i::process_bluefile_extendedheader(shared_ptr_file_packet curren
     e_hdr->getKeywords(&blue_keywords);
 
     for (std::vector<blue::Keyword>::iterator keyIter = blue_keywords.begin(); keyIter != blue_keywords.end(); keyIter++) {
-    	// Don't insert IF into SRI keywords
-    	if (not foundIF && keyIter->getName() == "IF") {
-    		double tmp;
-    		keyIter->getValue(&tmp);
-    		IF = tmp;
+        // Don't insert IF into SRI keywords
+        if (not foundIF && keyIter->getName() == "IF") {
+            double tmp;
+            keyIter->getValue(&tmp);
+            IF = tmp;
 
-    		foundIF = true;
-    		continue;
-    	}
+            foundIF = true;
+            continue;
+        }
 
         size_t cur_kw_size = current_packet->sri.keywords.length();
         current_packet->sri.keywords.length(cur_kw_size + 1);
 
         if (keyIter->getName() == "COL_RF") {
-        	COL_RFIndex = cur_kw_size;
-        	foundCOL_RF = true;
+            COL_RFIndex = cur_kw_size;
+            foundCOL_RF = true;
         }
 
         current_packet->sri.keywords[cur_kw_size].id = keyIter->getName().c_str();
@@ -838,15 +838,15 @@ bool FileReader_i::process_bluefile_extendedheader(shared_ptr_file_packet curren
             if (keyIter->getName() != "COL_RF") {
                 value <<= CORBA::string_dup(tmp.c_str());
             } else {
-            	double tmpDouble;
-            	std::stringstream ss;
-            	ss << tmp;
-            	ss >> tmpDouble;
-            	value <<= CORBA::Double(tmpDouble);
+                double tmpDouble;
+                std::stringstream ss;
+                ss << tmp;
+                ss >> tmpDouble;
+                value <<= CORBA::Double(tmpDouble);
             }
         }
         current_packet->sri.keywords[cur_kw_size].value = value;
-        
+
         if(std::string(current_packet->sri.keywords[cur_kw_size].id) == "TIME_EPOCH"){
             double time;
             keyIter->getValue(&time);
@@ -858,26 +858,26 @@ bool FileReader_i::process_bluefile_extendedheader(shared_ptr_file_packet curren
     // Check for adherence to FS/4 rule and if the check
     // fails, enforce it
     if (isReal && foundCOL_RF && foundIF) {
-    	// Check if the two numbers are within 0.5 Hz of one another
-    	if (std::abs(IF - (this->sample_rate_d / 4.0)) > 0.5) {
-    		LOG_INFO(FileReader_i, "The IF center frequency does not adhere to the Fs/4 rule.  Adjusting COL_RF");
+        // Check if the two numbers are within 0.5 Hz of one another
+        if (std::abs(IF - (this->sample_rate_d / 4.0)) > 0.5) {
+            LOG_INFO(FileReader_i, "The IF center frequency does not adhere to the Fs/4 rule.  Adjusting COL_RF");
 
-    		CORBA::Double COL_RF;
+            CORBA::Double COL_RF;
 
-    		current_packet->sri.keywords[COL_RFIndex].value >>= COL_RF;
+            current_packet->sri.keywords[COL_RFIndex].value >>= COL_RF;
 
-    		CORBA::Double newCOL_RF = COL_RF - IF + this->sample_rate_d / 4.0;
+            CORBA::Double newCOL_RF = COL_RF - IF + this->sample_rate_d / 4.0;
 
-    		current_packet->sri.keywords[COL_RFIndex].value <<= newCOL_RF;
-    	}
+            current_packet->sri.keywords[COL_RFIndex].value <<= newCOL_RF;
+        }
     }
     // Otherwise, if the IF keyword is found, include it in the
     // SRI keywords
     else if (foundIF) {
-    	size_t cur_kw_size = current_packet->sri.keywords.length();
-    	current_packet->sri.keywords.length(cur_kw_size + 1);
-    	current_packet->sri.keywords[cur_kw_size].id = "IF";
-    	current_packet->sri.keywords[cur_kw_size].value <<= IF;
+        size_t cur_kw_size = current_packet->sri.keywords.length();
+        current_packet->sri.keywords.length(cur_kw_size + 1);
+        current_packet->sri.keywords[cur_kw_size].id = "IF";
+        current_packet->sri.keywords[cur_kw_size].value <<= IF;
     }
 
     return true;
@@ -914,7 +914,7 @@ bool FileReader_i::process_wav_header(shared_ptr_file_packet current_packet, WAV
     current_packet->sri.ydelta = 0;
     current_packet->sri.yunits = 1;
     current_packet->sri.blocking = default_sri.blocking;
-         return true;
+    return true;
 
 
 }
@@ -928,17 +928,17 @@ bool FileReader_i::process_wav_header(shared_ptr_file_packet current_packet, WAV
         the previous call was NORMAL.
         If the return value for the previous call was NOOP, then the serviceThread waits
         an amount of time defined in the serviceThread's constructor.
-        
+
     SRI:
         To create a StreamSRI object, use the following code:
                 std::string stream_id = "testStream";
                 BULKIO::StreamSRI sri = bulkio::sri::create(stream_id);
 
-	Time:
-	    To create a PrecisionUTCTime object, use the following code:
+    Time:
+        To create a PrecisionUTCTime object, use the following code:
                 BULKIO::PrecisionUTCTime tstamp = bulkio::time::utils::now();
 
-        
+
     Ports:
 
         Data is passed to the serviceFunction through the getPacket call (BULKIO only).
@@ -999,7 +999,7 @@ bool FileReader_i::process_wav_header(shared_ptr_file_packet current_packet, WAV
         Interactions with non-BULKIO ports are left up to the component developer's discretion
 
     Properties:
-        
+
         Properties are accessed directly as member variables. For example, if the
         property name is "baudRate", it may be accessed within member functions as
         "baudRate". Unnamed properties are given a generated name of the form
@@ -1007,24 +1007,24 @@ bool FileReader_i::process_wav_header(shared_ptr_file_packet current_packet, WAV
         Property types are mapped to the nearest C++ type, (e.g. "string" becomes
         "std::string"). All generated properties are declared in the base class
         (FileReader_base).
-    
+
         Simple sequence properties are mapped to "std::vector" of the simple type.
         Struct properties, if used, are mapped to C++ structs defined in the
         generated file "struct_props.h". Field names are taken from the name in
         the properties file; if no name is given, a generated name of the form
         "field_n" is used, where "n" is the ordinal number of the field.
-        
+
         Example:
             // This example makes use of the following Properties:
             //  - A float value called scaleValue
             //  - A boolean called scaleInput
-              
+
             if (scaleInput) {
                 dataOut[i] = dataIn[i] * scaleValue;
             } else {
                 dataOut[i] = dataIn[i];
             }
-            
+
         Callback methods can be associated with a property so that the methods are
         called each time the property value changes.  This is done by calling 
         addPropertyChangeListener(<property name>, this, &FileReader_i::<callback method>)
@@ -1036,7 +1036,7 @@ bool FileReader_i::process_wav_header(shared_ptr_file_packet current_packet, WAV
         Example:
             // This example makes use of the following Properties:
             //  - A float value called scaleValue
-            
+
         //Add to FileReader.cpp
         FileReader_i::FileReader_i(const char *uuid, const char *label) :
             FileReader_base(uuid, label)
@@ -1049,20 +1049,20 @@ bool FileReader_i::process_wav_header(shared_ptr_file_packet current_packet, WAV
             std::cout << "scaleValue changed from" << *oldValue << " to " << *newValue
                       << std::endl;
         }
-            
+
         //Add to FileReader.h
         void scaleChanged(const float* oldValue, const float* newValue);
-        
-        
+
+
 ************************************************************************************************/
 int FileReader_i::serviceFunction() {
     // Ensure that the configure() and serviceFunction() are thread safe
-	 exclusive_lock st_lock(service_thread_lock);
+    exclusive_lock st_lock(service_thread_lock);
 
     // No need to perform serviceFunction duties if no data is available or the playing state is not selected
     if (playback_state != "PLAY" || used_file_packets.getUsage() <= 0) {
-    	st_lock.unlock();
-        usleep(std::min(throttle_usleep / 4, size_t(250e3))); // instead of returning NOOP, i want to control the amount of sleep 
+        st_lock.unlock();
+        usleep(std::min(throttle_usleep / 4, size_t(250e3))); // instead of returning NOOP, i want to control the amount of sleep
         return NORMAL;
     }
 
@@ -1070,44 +1070,44 @@ int FileReader_i::serviceFunction() {
     bulkio::InShortPort::dataTransfer *tmp = 0;
     size_t metaDataPacketSize=0;
     if (advanced_properties.use_metadata_file) {
-    	tmp = metadataQueue->getPacket(bulkio::Const::NON_BLOCKING);
+        tmp = metadataQueue->getPacket(bulkio::Const::NON_BLOCKING);
         if (not tmp) { // No data is available
               return NOOP;
         }
 
-    	sriChanged = tmp->sriChanged;
-    	metaDataPacketSize = tmp->dataBuffer[0];
+        sriChanged = tmp->sriChanged;
+        metaDataPacketSize = tmp->dataBuffer[0];
     }
 
     // Retrieve cached data block
     shared_ptr_file_packet pkt = used_file_packets.pop();
 
     if (advanced_properties.use_metadata_file) {
-		if (pkt->dataBuffer.size() !=metaDataPacketSize) {
-			LOG_FATAL(FileReader_i, "Metadata File Size does not equal Size of read data. Can't Handle This. ");
-			stop();
-		}
+        if (pkt->dataBuffer.size() !=metaDataPacketSize) {
+            LOG_FATAL(FileReader_i, "Metadata File Size does not equal Size of read data. Can't Handle This. ");
+            stop();
+        }
     }
 
 
     if(pkt->NO_MORE_DATA){
-    	st_lock.unlock();
-    	try{
-    		CF::Properties props;
-    		props.length(1);
-    		props[0].id = "playback_state";
-    		props[0].value <<= CORBA::string_dup("STOP");
-    		configure(props);
-    	} catch(...){};
-    	available_file_packets.push(pkt);
-    	return NOOP;
+        st_lock.unlock();
+        try{
+            CF::Properties props;
+            props.length(1);
+            props[0].id = "playback_state";
+            props[0].value <<= CORBA::string_dup("STOP");
+            configure(props);
+        } catch(...){};
+        available_file_packets.push(pkt);
+        return NOOP;
     }
 
     // New stream: every time a file has changed or when the state goes to PLAY
     if (pkt->first_packet) {
         // Always send SRI when files change
         sriChanged = true;
-        
+
         // File Format
         current_data_format = pkt->data_format;
         if (current_data_format.empty()) {
@@ -1118,7 +1118,7 @@ int FileReader_i::serviceFunction() {
         //    constructed sri depends on current_data_format and
         //    will not reflect current_data_format unless called
         //    here
-		reconstruct_property_sri(pkt->sample_rate);
+        reconstruct_property_sri(pkt->sample_rate);
 
         // TIMESTAMP //
         // Determine timestamp to use: either (1) system time (2) from properties (3) from file header
@@ -1137,27 +1137,27 @@ int FileReader_i::serviceFunction() {
     }
     // If we are using metadata file mode then the timecode is provided and will be used
     if (advanced_properties.use_metadata_file) {
-       	data_tstamp = tmp->T;
+        data_tstamp = tmp->T;
     }
     // sriChanged: every time the SRI needs to be updated
     if (sriChanged) {
         sriChanged = false;
 
         if (pkt->valid_sri && !advanced_properties.ignore_header_metadata) {
-			current_sri = pkt->sri;
-			if (advanced_properties.append_default_sri_keywords) {
-				size_t cur_kw_len = current_sri.keywords.length();
-				size_t prop_kw_len = property_sri.keywords.length();
-				current_sri.keywords.length(cur_kw_len + prop_kw_len);
-				for (size_t cur_pos = cur_kw_len, prop_pos = 0; cur_pos < cur_kw_len + prop_kw_len; cur_pos++, prop_pos++) {
-					current_sri.keywords[cur_pos] = property_sri.keywords[prop_pos];
-				}
-			}
-		} else if (advanced_properties.use_metadata_file) { //If using Metadata file, the SRI comes from that file
-			current_sri = tmp->SRI;
-		} else {
-			current_sri = property_sri;
-		}
+            current_sri = pkt->sri;
+            if (advanced_properties.append_default_sri_keywords) {
+                size_t cur_kw_len = current_sri.keywords.length();
+                size_t prop_kw_len = property_sri.keywords.length();
+                current_sri.keywords.length(cur_kw_len + prop_kw_len);
+                for (size_t cur_pos = cur_kw_len, prop_pos = 0; cur_pos < cur_kw_len + prop_kw_len; cur_pos++, prop_pos++) {
+                    current_sri.keywords[cur_pos] = property_sri.keywords[prop_pos];
+                }
+            }
+        } else if (advanced_properties.use_metadata_file) { //If using Metadata file, the SRI comes from that file
+            current_sri = tmp->SRI;
+        } else {
+            current_sri = property_sri;
+        }
 
         current_sri.streamID = replace_string(std::string(current_sri.streamID), "%FILE_BASENAME%", pkt->file_basename).c_str();
         if (advanced_properties.debug_output) {
@@ -1172,7 +1172,7 @@ int FileReader_i::serviceFunction() {
         std::ostringstream sampleRateConverter;
         sampleRateConverter << sample_rate_d;
         sample_rate = sampleRateConverter.str();
-        
+
         // Update throttle
         reset_throttle();
     }
@@ -1189,59 +1189,59 @@ int FileReader_i::serviceFunction() {
                 ", EOS: " << eos << ", Stream ID: " << streamID << std::endl;
     }
     LOG_DEBUG(FileReader_i, " pushPacket::  Packet Address: " << (void*) &pkt->dataBuffer[0] << ", Number Bytes: " << pkt->dataBuffer.size() <<
-                ", Timestamp(m/s/o/w/f): " << data_tstamp.tcmode << "/" << data_tstamp.tcstatus << "/" << data_tstamp.toff << "/" << (long) data_tstamp.twsec << "/" << (double) data_tstamp.tfsec <<
-                ", EOS: " << eos << ", Stream ID: " << streamID);
+            ", Timestamp(m/s/o/w/f): " << data_tstamp.tcmode << "/" << data_tstamp.tcstatus << "/" << data_tstamp.toff << "/" << (long) data_tstamp.twsec << "/" << (double) data_tstamp.tfsec <<
+            ", EOS: " << eos << ", Stream ID: " << streamID);
     bool packet_in_range = is_packet_in_range(pkt);
     if (packet_in_range) {
-		switch (dth.get_dt_descriptor(current_data_format)->data_type) {
-			case SUPPORTED_DATA_TYPE::_8a_: case SUPPORTED_DATA_TYPE::_8u_: case SUPPORTED_DATA_TYPE::_8t_:
-				pushPacket((std::vector<char> *) & pkt->dataBuffer, data_tstamp, eos, streamID);
-				break;
-			case SUPPORTED_DATA_TYPE::_8o_:
-				pushPacket((std::vector<unsigned char> *) & pkt->dataBuffer, data_tstamp, eos, streamID);
-				break;
-			case SUPPORTED_DATA_TYPE::_16o_:
-				pushPacket((std::vector<CORBA::UShort> *) & pkt->dataBuffer, data_tstamp, eos, streamID);
-				break;
-			case SUPPORTED_DATA_TYPE::_16t_:
-				pushPacket((std::vector<CORBA::Short> *) & pkt->dataBuffer, data_tstamp, eos, streamID);
-				break;
-			case SUPPORTED_DATA_TYPE::_32o_:
-				pushPacket((std::vector<CORBA::ULong> *) & pkt->dataBuffer, data_tstamp, eos, streamID);
-				break;
-			case SUPPORTED_DATA_TYPE::_32t_:
-				pushPacket((std::vector<CORBA::Long> *) & pkt->dataBuffer, data_tstamp, eos, streamID);
-				break;
-			case SUPPORTED_DATA_TYPE::_32f_:
-				pushPacket((std::vector<CORBA::Float> *) & pkt->dataBuffer, data_tstamp, eos, streamID);
-				break;
-			case SUPPORTED_DATA_TYPE::_64f_:
-				pushPacket((std::vector<CORBA::Double> *) & pkt->dataBuffer, data_tstamp, eos, streamID);
-				break;
-			case SUPPORTED_DATA_TYPE::_64t_:
-				pushPacket((std::vector<CORBA::LongLong> *) & pkt->dataBuffer, data_tstamp, eos, streamID);
-				break;
-		}
+        switch (dth.get_dt_descriptor(current_data_format)->data_type) {
+        case SUPPORTED_DATA_TYPE::_8a_: case SUPPORTED_DATA_TYPE::_8u_: case SUPPORTED_DATA_TYPE::_8t_:
+            pushPacket((std::vector<char> *) & pkt->dataBuffer, data_tstamp, eos, streamID);
+            break;
+        case SUPPORTED_DATA_TYPE::_8o_:
+            pushPacket((std::vector<unsigned char> *) & pkt->dataBuffer, data_tstamp, eos, streamID);
+            break;
+        case SUPPORTED_DATA_TYPE::_16o_:
+            pushPacket((std::vector<CORBA::UShort> *) & pkt->dataBuffer, data_tstamp, eos, streamID);
+            break;
+        case SUPPORTED_DATA_TYPE::_16t_:
+            pushPacket((std::vector<CORBA::Short> *) & pkt->dataBuffer, data_tstamp, eos, streamID);
+            break;
+        case SUPPORTED_DATA_TYPE::_32o_:
+            pushPacket((std::vector<CORBA::ULong> *) & pkt->dataBuffer, data_tstamp, eos, streamID);
+            break;
+        case SUPPORTED_DATA_TYPE::_32t_:
+            pushPacket((std::vector<CORBA::Long> *) & pkt->dataBuffer, data_tstamp, eos, streamID);
+            break;
+        case SUPPORTED_DATA_TYPE::_32f_:
+            pushPacket((std::vector<CORBA::Float> *) & pkt->dataBuffer, data_tstamp, eos, streamID);
+            break;
+        case SUPPORTED_DATA_TYPE::_64f_:
+            pushPacket((std::vector<CORBA::Double> *) & pkt->dataBuffer, data_tstamp, eos, streamID);
+            break;
+        case SUPPORTED_DATA_TYPE::_64t_:
+            pushPacket((std::vector<CORBA::LongLong> *) & pkt->dataBuffer, data_tstamp, eos, streamID);
+            break;
+        }
     }
     else {
-    	// Since this packet did not fall into our desired time range, skip ahead until we find a packet in our range, or the queue is empty
-    	bool popped = true;
-    	while (popped) {
-    		shared_ptr_file_packet newPkt;
-    		popped = used_file_packets.tryPop(newPkt);
-    		if (popped) {
-    			if (is_packet_in_range(newPkt)) {
-    				used_file_packets.pushFront(newPkt);
-    				break;
-    			}
-    			else {
-    				eos = newPkt->last_packet;
-    				available_file_packets.push(newPkt);
-    				if (eos)
-    					break;
-    			}
-    		}
-    	}
+        // Since this packet did not fall into our desired time range, skip ahead until we find a packet in our range, or the queue is empty
+        bool popped = true;
+        while (popped) {
+            shared_ptr_file_packet newPkt;
+            popped = used_file_packets.tryPop(newPkt);
+            if (popped) {
+                if (is_packet_in_range(newPkt)) {
+                    used_file_packets.pushFront(newPkt);
+                    break;
+                }
+                else {
+                    eos = newPkt->last_packet;
+                    available_file_packets.push(newPkt);
+                    if (eos)
+                        break;
+                }
+            }
+        }
     }
 
     //Updating the timestamp for coherency
@@ -1251,15 +1251,15 @@ int FileReader_i::serviceFunction() {
     data_tstamp.tfsec = modf(data_tstamp.tfsec, &frac_whole_sec);
     data_tstamp.twsec += whole_sec + frac_whole_sec;
 
-	if(eos) {
-		outstanding_streams.erase(streamID);
-		if (!packet_in_range) {
-			// Received a packet with an EOS, however we did not push it out since the packet was not within the time of the
-			// desired playback window, so instead push out a packet with no data and an EOS
-			pushPacket((std::vector<char> *) &empty_packet_data, data_tstamp, eos, streamID);
-		}
-	} else
-		outstanding_streams.insert(std::make_pair(streamID,loop_info(streamID,data_tstamp)));
+    if(eos) {
+        outstanding_streams.erase(streamID);
+        if (!packet_in_range) {
+            // Received a packet with an EOS, however we did not push it out since the packet was not within the time of the
+            // desired playback window, so instead push out a packet with no data and an EOS
+            pushPacket((std::vector<char> *) &empty_packet_data, data_tstamp, eos, streamID);
+        }
+    } else
+        outstanding_streams.insert(std::make_pair(streamID,loop_info(streamID,data_tstamp)));
 
     available_file_packets.push(pkt);
     st_lock.unlock();
@@ -1273,7 +1273,7 @@ int FileReader_i::serviceFunction() {
         if (throttle_usleep > 0 && throttle_rate_Bps > 0 && sent_bytes > 0) {
             // Current sleep
             usleep(std::min(size_t(advanced_properties.max_sleep_time*1e6), throttle_usleep));;
-            
+
             // Update sleep amount
             double timeDiff_from_last_pkt = get_timestamp_difference(throttle_tstamp, get_current_timestamp());
             component_status.estimated_output_rate = long(double(sent_bytes) / timeDiff_from_last_pkt);
@@ -1290,134 +1290,134 @@ int FileReader_i::serviceFunction() {
     return NORMAL;
 }
 
- void  FileReader_i::pushSRI(const BULKIO::StreamSRI& H){
-     dataChar_out->pushSRI(H);
-     dataOctet_out->pushSRI(H);
-     dataUshort_out->pushSRI(H);
-     dataShort_out->pushSRI(H);
-     dataUlong_out->pushSRI(H);
-     dataLong_out->pushSRI(H);
-     dataFloat_out->pushSRI(H);
-     dataDouble_out->pushSRI(H);
-     dataLongLong_out->pushSRI(H);
-     dataUlongLong_out->pushSRI(H);
-     dataXML_out->pushSRI(H);
- }
+void  FileReader_i::pushSRI(const BULKIO::StreamSRI& H){
+    dataChar_out->pushSRI(H);
+    dataOctet_out->pushSRI(H);
+    dataUshort_out->pushSRI(H);
+    dataShort_out->pushSRI(H);
+    dataUlong_out->pushSRI(H);
+    dataLong_out->pushSRI(H);
+    dataFloat_out->pushSRI(H);
+    dataDouble_out->pushSRI(H);
+    dataLongLong_out->pushSRI(H);
+    dataUlongLong_out->pushSRI(H);
+    dataXML_out->pushSRI(H);
+}
 
 
 
 template <typename DATA_IN_TYPE>
 void  FileReader_i::pushPacket(const std::vector<DATA_IN_TYPE> *data, BULKIO::PrecisionUTCTime& T, bool EOS, std::string& streamID)
 {
-	if (dataChar_out->isActive()) {
-		std::vector<char> *ptr = (std::vector<char> *) ((void*) &port_buffer);
-		if (typeid (DATA_IN_TYPE) != typeid (CORBA::Char) && advanced_properties.data_type_conversion) {
-			dataTypeTransform::convertVectorDataType((std::vector<DATA_IN_TYPE> *) data, ptr,advanced_properties.data_conversion_normalization);
-			dataChar_out->pushPacket(*ptr, T, EOS, streamID);
-		} else {
-			dataChar_out->pushPacket(*((std::vector<char> *) data), T, EOS, streamID);
-		}
-	}
+    if (dataChar_out->isActive()) {
+        std::vector<char> *ptr = (std::vector<char> *) ((void*) &port_buffer);
+        if (typeid (DATA_IN_TYPE) != typeid (CORBA::Char) && advanced_properties.data_type_conversion) {
+            dataTypeTransform::convertVectorDataType((std::vector<DATA_IN_TYPE> *) data, ptr,advanced_properties.data_conversion_normalization);
+            dataChar_out->pushPacket(*ptr, T, EOS, streamID);
+        } else {
+            dataChar_out->pushPacket(*((std::vector<char> *) data), T, EOS, streamID);
+        }
+    }
 
-	if (dataOctet_out->isActive()) {
-		std::vector<unsigned char> *ptr = (std::vector<unsigned char> *) ((void*) &port_buffer);
-		if (typeid(DATA_IN_TYPE) != typeid(unsigned char) && advanced_properties.data_type_conversion) {
-			dataTypeTransform::convertVectorDataType((std::vector<DATA_IN_TYPE> *) data, ptr,advanced_properties.data_conversion_normalization);
-			dataOctet_out->pushPacket(*ptr, T, EOS, streamID);
-		} else {
-			dataOctet_out->pushPacket(*((std::vector<unsigned char> *) data), T, EOS, streamID);
-		}
-	}
+    if (dataOctet_out->isActive()) {
+        std::vector<unsigned char> *ptr = (std::vector<unsigned char> *) ((void*) &port_buffer);
+        if (typeid(DATA_IN_TYPE) != typeid(unsigned char) && advanced_properties.data_type_conversion) {
+            dataTypeTransform::convertVectorDataType((std::vector<DATA_IN_TYPE> *) data, ptr,advanced_properties.data_conversion_normalization);
+            dataOctet_out->pushPacket(*ptr, T, EOS, streamID);
+        } else {
+            dataOctet_out->pushPacket(*((std::vector<unsigned char> *) data), T, EOS, streamID);
+        }
+    }
 
-	if (dataShort_out->isActive()) {
-		std::vector<short> *ptr = (std::vector<short> *) ((void*) &port_buffer);
-		if (typeid (DATA_IN_TYPE) != typeid (short) && advanced_properties.data_type_conversion) {
-			dataTypeTransform::convertVectorDataType((std::vector<DATA_IN_TYPE> *)data, ptr, advanced_properties.data_conversion_normalization);
-			dataShort_out->pushPacket(*ptr, T, EOS, streamID);
-		} else {
-			dataShort_out->pushPacket(*((std::vector<short> *) data), T, EOS, streamID);
-		}
-	}
+    if (dataShort_out->isActive()) {
+        std::vector<short> *ptr = (std::vector<short> *) ((void*) &port_buffer);
+        if (typeid (DATA_IN_TYPE) != typeid (short) && advanced_properties.data_type_conversion) {
+            dataTypeTransform::convertVectorDataType((std::vector<DATA_IN_TYPE> *)data, ptr, advanced_properties.data_conversion_normalization);
+            dataShort_out->pushPacket(*ptr, T, EOS, streamID);
+        } else {
+            dataShort_out->pushPacket(*((std::vector<short> *) data), T, EOS, streamID);
+        }
+    }
 
-	if (dataUshort_out->isActive()) {
-		std::vector<unsigned short> *ptr = (std::vector<unsigned short> *) ((void*) &port_buffer);
-		if (typeid(DATA_IN_TYPE) != typeid(unsigned short) && advanced_properties.data_type_conversion) {
-			dataTypeTransform::convertVectorDataType((std::vector<DATA_IN_TYPE> *) data, ptr, advanced_properties.data_conversion_normalization);
-			dataUshort_out->pushPacket(*ptr, T, EOS, streamID);
-		} else {
-			dataUshort_out->pushPacket(*((std::vector<unsigned short> *) data), T, EOS, streamID);
-		}
-	}
+    if (dataUshort_out->isActive()) {
+        std::vector<unsigned short> *ptr = (std::vector<unsigned short> *) ((void*) &port_buffer);
+        if (typeid(DATA_IN_TYPE) != typeid(unsigned short) && advanced_properties.data_type_conversion) {
+            dataTypeTransform::convertVectorDataType((std::vector<DATA_IN_TYPE> *) data, ptr, advanced_properties.data_conversion_normalization);
+            dataUshort_out->pushPacket(*ptr, T, EOS, streamID);
+        } else {
+            dataUshort_out->pushPacket(*((std::vector<unsigned short> *) data), T, EOS, streamID);
+        }
+    }
 
-	if (dataLong_out->isActive()) {
-		std::vector<CORBA::Long> *ptr = (std::vector<CORBA::Long> *) ((void*) &port_buffer);
-		if (typeid(DATA_IN_TYPE) != typeid(CORBA::Long) && advanced_properties.data_type_conversion) {
-			dataTypeTransform::convertVectorDataType((std::vector<DATA_IN_TYPE> *) data, ptr, advanced_properties.data_conversion_normalization);
-			dataLong_out->pushPacket(*ptr, T, EOS, streamID);
-		} else {
-			dataLong_out->pushPacket(*((std::vector<CORBA::Long> *) data), T, EOS, streamID);
-		}
-	}
+    if (dataLong_out->isActive()) {
+        std::vector<CORBA::Long> *ptr = (std::vector<CORBA::Long> *) ((void*) &port_buffer);
+        if (typeid(DATA_IN_TYPE) != typeid(CORBA::Long) && advanced_properties.data_type_conversion) {
+            dataTypeTransform::convertVectorDataType((std::vector<DATA_IN_TYPE> *) data, ptr, advanced_properties.data_conversion_normalization);
+            dataLong_out->pushPacket(*ptr, T, EOS, streamID);
+        } else {
+            dataLong_out->pushPacket(*((std::vector<CORBA::Long> *) data), T, EOS, streamID);
+        }
+    }
 
-	if (dataUlong_out->isActive()) {
-		std::vector<CORBA::ULong> *ptr = (std::vector<CORBA::ULong> *) ((void*) &port_buffer);
-		if (typeid(DATA_IN_TYPE) != typeid(CORBA::ULong) && advanced_properties.data_type_conversion) {
-			dataTypeTransform::convertVectorDataType((std::vector<DATA_IN_TYPE> *) data, ptr, advanced_properties.data_conversion_normalization);
-			dataUlong_out->pushPacket(*ptr, T, EOS, streamID);
-		} else {
-			dataUlong_out->pushPacket(*((std::vector<CORBA::ULong> *) data), T, EOS, streamID);
-		}
-	}
+    if (dataUlong_out->isActive()) {
+        std::vector<CORBA::ULong> *ptr = (std::vector<CORBA::ULong> *) ((void*) &port_buffer);
+        if (typeid(DATA_IN_TYPE) != typeid(CORBA::ULong) && advanced_properties.data_type_conversion) {
+            dataTypeTransform::convertVectorDataType((std::vector<DATA_IN_TYPE> *) data, ptr, advanced_properties.data_conversion_normalization);
+            dataUlong_out->pushPacket(*ptr, T, EOS, streamID);
+        } else {
+            dataUlong_out->pushPacket(*((std::vector<CORBA::ULong> *) data), T, EOS, streamID);
+        }
+    }
 
-	if (dataLongLong_out->isActive()) {
-		std::vector<CORBA::LongLong> *ptr = (std::vector<CORBA::LongLong> *) ((void*) &port_buffer);
-		if (typeid(DATA_IN_TYPE) != typeid(CORBA::LongLong) && advanced_properties.data_type_conversion) {
-			dataTypeTransform::convertVectorDataType((std::vector<DATA_IN_TYPE> *) data, ptr, advanced_properties.data_conversion_normalization);
-			dataLongLong_out->pushPacket(*ptr, T, EOS, streamID);
-		} else {
-			dataLongLong_out->pushPacket(*((std::vector<CORBA::LongLong> *) data), T, EOS, streamID);
-		}
-	}
+    if (dataLongLong_out->isActive()) {
+        std::vector<CORBA::LongLong> *ptr = (std::vector<CORBA::LongLong> *) ((void*) &port_buffer);
+        if (typeid(DATA_IN_TYPE) != typeid(CORBA::LongLong) && advanced_properties.data_type_conversion) {
+            dataTypeTransform::convertVectorDataType((std::vector<DATA_IN_TYPE> *) data, ptr, advanced_properties.data_conversion_normalization);
+            dataLongLong_out->pushPacket(*ptr, T, EOS, streamID);
+        } else {
+            dataLongLong_out->pushPacket(*((std::vector<CORBA::LongLong> *) data), T, EOS, streamID);
+        }
+    }
 
-	if (dataUlongLong_out->isActive()) {
-		std::vector<CORBA::ULongLong> *ptr = (std::vector<CORBA::ULongLong> *) ((void*) &port_buffer);
-		if (typeid(DATA_IN_TYPE) != typeid(CORBA::ULongLong) && advanced_properties.data_type_conversion) {
-			dataTypeTransform::convertVectorDataType((std::vector<DATA_IN_TYPE> *) data, ptr, advanced_properties.data_conversion_normalization);
-			dataUlongLong_out->pushPacket(*ptr, T, EOS, streamID);
-		} else {
-			dataUlongLong_out->pushPacket(*((std::vector<CORBA::ULongLong> *) data), T, EOS, streamID);
-		}
-	}
+    if (dataUlongLong_out->isActive()) {
+        std::vector<CORBA::ULongLong> *ptr = (std::vector<CORBA::ULongLong> *) ((void*) &port_buffer);
+        if (typeid(DATA_IN_TYPE) != typeid(CORBA::ULongLong) && advanced_properties.data_type_conversion) {
+            dataTypeTransform::convertVectorDataType((std::vector<DATA_IN_TYPE> *) data, ptr, advanced_properties.data_conversion_normalization);
+            dataUlongLong_out->pushPacket(*ptr, T, EOS, streamID);
+        } else {
+            dataUlongLong_out->pushPacket(*((std::vector<CORBA::ULongLong> *) data), T, EOS, streamID);
+        }
+    }
 
-	if (dataFloat_out->isActive()) {
-		std::vector<float> *ptr = (std::vector<float> *) ((void*) &port_buffer);
-		if (typeid(DATA_IN_TYPE) != typeid(float) && advanced_properties.data_type_conversion) {
-			dataTypeTransform::convertVectorDataType((std::vector<DATA_IN_TYPE> *) data, ptr, advanced_properties.data_conversion_normalization);
-			dataFloat_out->pushPacket(*ptr, T, EOS, streamID);
-		} else {
-			dataFloat_out->pushPacket(*((std::vector<float> *) data), T, EOS, streamID);
-		}
-	}
+    if (dataFloat_out->isActive()) {
+        std::vector<float> *ptr = (std::vector<float> *) ((void*) &port_buffer);
+        if (typeid(DATA_IN_TYPE) != typeid(float) && advanced_properties.data_type_conversion) {
+            dataTypeTransform::convertVectorDataType((std::vector<DATA_IN_TYPE> *) data, ptr, advanced_properties.data_conversion_normalization);
+            dataFloat_out->pushPacket(*ptr, T, EOS, streamID);
+        } else {
+            dataFloat_out->pushPacket(*((std::vector<float> *) data), T, EOS, streamID);
+        }
+    }
 
-	if (dataDouble_out->isActive()) {
-		std::vector<double> *ptr = (std::vector<double> *) ((void*) &port_buffer);
-		if (typeid(DATA_IN_TYPE) != typeid(double) && advanced_properties.data_type_conversion) {
-			dataTypeTransform::convertVectorDataType((std::vector<DATA_IN_TYPE> *) data, ptr, advanced_properties.data_conversion_normalization);
-			dataDouble_out->pushPacket(*ptr, T, EOS, streamID);
-		} else {
-			dataDouble_out->pushPacket(*((std::vector<double> *) data), T, EOS, streamID);
-		}
-	}
+    if (dataDouble_out->isActive()) {
+        std::vector<double> *ptr = (std::vector<double> *) ((void*) &port_buffer);
+        if (typeid(DATA_IN_TYPE) != typeid(double) && advanced_properties.data_type_conversion) {
+            dataTypeTransform::convertVectorDataType((std::vector<DATA_IN_TYPE> *) data, ptr, advanced_properties.data_conversion_normalization);
+            dataDouble_out->pushPacket(*ptr, T, EOS, streamID);
+        } else {
+            dataDouble_out->pushPacket(*((std::vector<double> *) data), T, EOS, streamID);
+        }
+    }
 
-	if (dataXML_out->isActive()) {
-		std::vector<char> *ptr = (std::vector<char> *) ((void*) &port_buffer);
-		if (typeid(DATA_IN_TYPE) != typeid(char) && advanced_properties.data_type_conversion) {
-			dataTypeTransform::convertVectorDataType((std::vector<DATA_IN_TYPE> *) data, ptr, advanced_properties.data_conversion_normalization);
-			dataXML_out->pushPacket((const char *) ptr->data(), T, EOS, streamID);
-		} else {
-			dataXML_out->pushPacket((const char *) data->data(), T, EOS, streamID);
-		}
-	}
+    if (dataXML_out->isActive()) {
+        std::vector<char> *ptr = (std::vector<char> *) ((void*) &port_buffer);
+        if (typeid(DATA_IN_TYPE) != typeid(char) && advanced_properties.data_type_conversion) {
+            dataTypeTransform::convertVectorDataType((std::vector<DATA_IN_TYPE> *) data, ptr, advanced_properties.data_conversion_normalization);
+            dataXML_out->pushPacket((const char *) ptr->data(), T, EOS, streamID);
+        } else {
+            dataXML_out->pushPacket((const char *) data->data(), T, EOS, streamID);
+        }
+    }
 }
 
 
@@ -1435,7 +1435,7 @@ void FileReader_i::port_push_packet(BIO_PORT_TYPE *port, const std::vector<DATA_
             for (size_t i = 0; i < data->size(); i++) {
                 ptr->push_back((NATIVE_DATA_OUT_TYPE) data->at(i));
             }
-            //        	ptr = (std::vector<NATIVE_DATA_OUT_TYPE> *) ((void*) data);
+            //            ptr = (std::vector<NATIVE_DATA_OUT_TYPE> *) ((void*) data);
         }
         if (ptr->size() == 0) {
             port->pushPacket(*ptr, T, EOS, streamID.c_str());
@@ -1458,14 +1458,14 @@ template <typename BIO_PORT_TYPE, typename DATA_IN_TYPE, typename DATA_OUT_TYPE>
 void FileReader_i::port_push_packet(BIO_PORT_TYPE *port, const std::vector<DATA_IN_TYPE> *data, bool EOS, std::string& streamID) {
     try {
         if((*data)[data->size()] != 0){
-			std::string tmp;
-			tmp.resize(data->size());
-			if(data->size() > 0)
-				memcpy(&tmp[0],&(*data)[0],data->size());
-			port->pushPacket(tmp.c_str(), EOS, streamID.c_str());
+            std::string tmp;
+            tmp.resize(data->size());
+            if(data->size() > 0)
+                memcpy(&tmp[0],&(*data)[0],data->size());
+            port->pushPacket(tmp.c_str(), EOS, streamID.c_str());
         }
         else
-        	port->pushPacket((const char*)&(*data)[0], EOS, streamID.c_str());
+            port->pushPacket((const char*)&(*data)[0], EOS, streamID.c_str());
     } catch (...) {
         std::cout << "** Call to port_push_packet (XML) by BULKIO_dataUber_Out_i failed" << std::endl;
     }
@@ -1476,46 +1476,46 @@ bool FileReader_i::is_packet_in_range (shared_ptr_file_packet pkt) {
     double pkt_stop_time_relative = pkt->stop_sample * current_sri.xdelta;
     bool in_range = false;
 
-	if (advanced_properties.enable_time_filtering && current_sri.xdelta > 0. && pkt_start_time_relative <= pkt_stop_time_relative) {
-		bool start_time_in_range = packet_time_in_range(pkt_start_time_relative);
-		bool stop_time_in_range = packet_time_in_range(pkt_stop_time_relative);
+    if (advanced_properties.enable_time_filtering && current_sri.xdelta > 0. && pkt_start_time_relative <= pkt_stop_time_relative) {
+        bool start_time_in_range = packet_time_in_range(pkt_start_time_relative);
+        bool stop_time_in_range = packet_time_in_range(pkt_stop_time_relative);
 
-		if (start_time_in_range) {
-			if (stop_time_in_range) {
-				in_range = true;
-			}
-			else if (advanced_properties.start_time <= advanced_properties.stop_time) {
-				// This packet contains the data associated with the desired stop time (and beyond) allow it for now.
-				// TODO in the future resize pkt->dataBuffer to only include desired data
-				in_range = true;
-			}
-		}
-		else if (stop_time_in_range) {
-			// Packet start time is before desired time range, but end of packet falls into range, so allow it for now
-			in_range = true;
-		}
-		else if (pkt_start_time_relative < advanced_properties.start_time && pkt_stop_time_relative >= advanced_properties.stop_time
-				&& advanced_properties.stop_time > 0 && advanced_properties.start_time < advanced_properties.stop_time) {
-			// TODO in the future resize pkt->dataBuffer to only include desired data
-			in_range = true;
-		}
-	}
-	else {
-		// Time filtered playback is disabled or the state of a basic variable does not make sense and could throw off all range calculations
-		in_range = true;
-	}
+        if (start_time_in_range) {
+            if (stop_time_in_range) {
+                in_range = true;
+            }
+            else if (advanced_properties.start_time <= advanced_properties.stop_time) {
+                // This packet contains the data associated with the desired stop time (and beyond) allow it for now.
+                // TODO in the future resize pkt->dataBuffer to only include desired data
+                in_range = true;
+            }
+        }
+        else if (stop_time_in_range) {
+            // Packet start time is before desired time range, but end of packet falls into range, so allow it for now
+            in_range = true;
+        }
+        else if (pkt_start_time_relative < advanced_properties.start_time && pkt_stop_time_relative >= advanced_properties.stop_time
+                && advanced_properties.stop_time > 0 && advanced_properties.start_time < advanced_properties.stop_time) {
+            // TODO in the future resize pkt->dataBuffer to only include desired data
+            in_range = true;
+        }
+    }
+    else {
+        // Time filtered playback is disabled or the state of a basic variable does not make sense and could throw off all range calculations
+        in_range = true;
+    }
 
     return in_range;
 }
 
 
 bool FileReader_i::packet_time_in_range(double pkt_time) {
-	// Packet times are in seconds relative to the start of the file
-	bool in_range = false;
-	if (advanced_properties.start_time <= pkt_time) {
-		if (pkt_time <= advanced_properties.stop_time || advanced_properties.stop_time < 0.) {
-			in_range = true;
-		}
-	}
-	return in_range;
+    // Packet times are in seconds relative to the start of the file
+    bool in_range = false;
+    if (advanced_properties.start_time <= pkt_time) {
+        if (pkt_time <= advanced_properties.stop_time || advanced_properties.stop_time < 0.) {
+            in_range = true;
+        }
+    }
+    return in_range;
 }
