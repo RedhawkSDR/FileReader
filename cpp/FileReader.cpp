@@ -1084,7 +1084,7 @@ int FileReader_i::serviceFunction() {
 
     if (advanced_properties.use_metadata_file) {
         if (pkt->dataBuffer.size() !=metaDataPacketSize) {
-            LOG_FATAL(FileReader_i, "Metadata File Size does not equal Size of read data. Can't Handle This. ");
+            LOG_FATAL(FileReader_i, "Size of data associated with metadata ("<<metaDataPacketSize<<" Bytes) does not equal the size of the incoming packet ("<<pkt->dataBuffer.size()<<" Bytes).");
             stop();
         }
     }
