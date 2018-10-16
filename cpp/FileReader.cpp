@@ -1292,7 +1292,7 @@ int FileReader_i::serviceFunction() {
             break;
         }
     }
-    else {
+    else if (!eos) {
         // Since this packet did not fall into our desired time range, skip ahead until we find a packet in our range, or the queue is empty
         bool popped = true;
         while (popped) {
