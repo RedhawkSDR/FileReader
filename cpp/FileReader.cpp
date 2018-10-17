@@ -64,7 +64,7 @@ void FileReader_i::constructor()
 
     // In metadata file mode, we need a queue for the metadata and the metadata parser
     // The metadata queue uses a bulkio port because it contains a queue for packets and SRI, this is just used as an internal data helper and is not actually a bulkio port
-    metadataQueue = new bulkio::InShortPort("metadataQueue");
+    metadataQueue = new bulkio::InLongPort("metadataQueue");
     metadataQueue->setMaxQueueDepth(1000000);
     MetaDataParser_i = new MetaDataParser(metadataQueue,&packetSizeQueue);
 
@@ -1144,7 +1144,7 @@ int FileReader_i::serviceFunction() {
 
     // Grab Metadata
     bool eos = pkt->last_packet;
-    bulkio::InShortPort::dataTransfer *metadataPkt = 0;
+    bulkio::InLongPort::dataTransfer *metadataPkt = 0;
     size_t metaDataPacketSize=0;
     if (advanced_properties.use_metadata_file) {
         metadataPkt = metadataQueue->getPacket(bulkio::Const::NON_BLOCKING);
@@ -1297,7 +1297,7 @@ int FileReader_i::serviceFunction() {
         bool popped = true;
         while (popped) {
             shared_ptr_file_packet newPkt;
-            bulkio::InShortPort::dataTransfer *newMPkt = 0;
+            bulkio::InLongPort::dataTransfer *newMPkt = 0;
             popped = used_file_packets.tryPop(newPkt);
             if (popped) {
                 if (pkt->NO_MORE_DATA || is_packet_in_range(newPkt)) {

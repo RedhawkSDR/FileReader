@@ -17,7 +17,7 @@ void charDataWrapper(void *userData,const XML_Char *chardata,int len) {
     ((MetaDataParser*) userData)->charData(data);
 }
 
-MetaDataParser::MetaDataParser(bulkio::InShortPort *metadataQueuePtr,std::queue<size_t> *packetSizeQueuePtr) :
+MetaDataParser::MetaDataParser(bulkio::InLongPort *metadataQueuePtr,std::queue<size_t> *packetSizeQueuePtr) :
         metadataQueue(metadataQueuePtr), packetSizeQueue(packetSizeQueuePtr), keywordCount(0), initialSri(true) {
     parser = XML_ParserCreate(NULL);
     resetPacket();
@@ -111,10 +111,9 @@ void MetaDataParser::endElement(const XML_Char *name) {
         }
         resetSRI();
     } else if (currentElement.name=="packet") {
-        PortTypes::ShortSequence data_length;
+        PortTypes::LongSequence data_length;
         data_length.length(1);
         data_length[0] = currentPacket.dataLength;
-
         metadataQueue->pushPacket(data_length,currentPacket.tstamp,currentPacket.EOS, currentPacket.streamID.c_str());
         packetSizeQueue->push(currentPacket.dataLength);
         resetPacket();

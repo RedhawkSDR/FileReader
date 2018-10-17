@@ -267,7 +267,7 @@ private:
     std::vector<char> empty_packet_data;
 
     //Metadata File Objects
-    bulkio::InShortPort *metadataQueue;
+    bulkio::InLongPort *metadataQueue;
     std::queue<size_t> packetSizeQueue;
     //Metadata parser
     MetaDataParser *MetaDataParser_i;

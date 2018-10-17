@@ -26,7 +26,7 @@ struct Element{
 
 struct PacketData {
     std::string streamID;
-    short dataLength;
+    long dataLength;
     bool EOS;
     BULKIO::PrecisionUTCTime tstamp;
 };
@@ -34,7 +34,7 @@ struct PacketData {
 class MetaDataParser {
 
 public:
-    MetaDataParser(bulkio::InShortPort *metadataQueuePtr,std::queue<size_t> *packetSizeQueuePtr);
+    MetaDataParser(bulkio::InLongPort *metadataQueuePtr,std::queue<size_t> *packetSizeQueuePtr);
     ~MetaDataParser();
     void parseData(std::vector<char> xmldata);
     void startElement(const XML_Char *name, const XML_Char **atts);
@@ -45,7 +45,7 @@ private:
     void resetParser();
     void resetPacket();
     void resetSRI();
-    bulkio::InShortPort *metadataQueue;
+    bulkio::InLongPort *metadataQueue;
     std::queue<size_t> *packetSizeQueue;
 
     std::vector<std::string> text;
