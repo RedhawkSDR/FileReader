@@ -596,6 +596,7 @@ class ResourceTests(ossie.utils.testing.ScaComponentTestCase):
         self.assertEqual(sri.keywords[1].id, "TEST_KW1")
         self.assertEqual(any.from_any(sri.keywords[1].value), 1111)
         #print tstamps[0],tstamps[1]
+        self.assertEqual(len(tstamps), 3)
         self.assertEqual(tstamps[0][0], 0)
         self.assertAlmostEqual(tstamps[0][1].twsec, 1537799012,10)
         self.assertAlmostEqual(tstamps[0][1].tfsec, 0.721574068069458,10)
@@ -611,6 +612,139 @@ class ResourceTests(ossie.utils.testing.ScaComponentTestCase):
         #Check that the input and output files are the same          
         try:
             self.assertEqual(data, readData)
+        except self.failureException as e:
+            comp.releaseObject()
+            sink.releaseObject()
+            raise e
+
+        #Release the components and remove the generated files
+        comp.releaseObject()
+        sink.releaseObject()
+         
+        print "........ PASSED\n"
+        return
+
+    def testwithMetadataTimeFilteringStart(self):
+        
+        #Define test files
+        dataFileIn = './data_onestream/testdata.out'
+        
+        #Read in Data from Test File
+        size = os.path.getsize(dataFileIn)
+        with open (dataFileIn, 'rb') as dataIn:
+            data = list(struct.unpack('h'*(size/2), dataIn.read(size)))
+            
+        #Create Components and Connections
+        print "Launched Component"
+        comp = sb.launch('../FileReader.spd.xml')
+        #comp.log_level(CF.LogLevels.TRACE)
+
+        #comp.advanced_properties.packet_size="10000"
+        comp.advanced_properties.throttle_rate = ""
+        
+        # This filtering should skip the first packet. This time is in the middle of the second packet, so we should get all of the second packet and the third packet 
+        comp.advanced_properties.enable_time_filtering = True
+        comp.advanced_properties.start_time = .00015
+        
+        comp.source_uri = dataFileIn       
+        comp.file_format = 'SHORT'
+        comp.advanced_properties.use_metadata_file = True
+        
+        sink = sb.DataSink()
+        comp.connect(sink, usesPortName='dataShort_out')
+        
+        #Start Components & Push Data
+        sb.start()
+        comp.playback_state = 'PLAY'
+        time.sleep(2)
+        readData,tstamps = sink.getData(tstamps=True)
+        sri = sink.sri()
+        self.assertEqual(sri.streamID, "test_streamID")
+
+        self.assertEqual(sri.keywords[0].id, "TEST_KW2")
+        self.assertEqual(any.from_any(sri.keywords[0].value), "2222")
+        self.assertEqual(sri.keywords[1].id, "TEST_KW1")
+        self.assertEqual(any.from_any(sri.keywords[1].value), 1111)
+
+        self.assertEqual(len(tstamps), 2)
+        self.assertAlmostEqual(tstamps[0][1].twsec, 1537799012,10)
+        self.assertAlmostEqual(tstamps[0][1].tfsec, 0.721842050552368,10)
+        self.assertEqual(tstamps[1][0], 1000)
+        self.assertAlmostEqual(tstamps[1][1].twsec, 1537799012,10)
+        self.assertAlmostEqual(tstamps[1][1].tfsec, 0.721976041793823,10)
+        
+        sb.stop()
+         
+        #Check that the input and output files are the same          
+        try:
+            self.assertEqual(data[1000:], readData)
+        except self.failureException as e:
+            comp.releaseObject()
+            sink.releaseObject()
+            raise e
+
+        #Release the components and remove the generated files
+        comp.releaseObject()
+        sink.releaseObject()
+         
+        print "........ PASSED\n"
+        return
+
+    def testwithMetadataTimeFilteringEnd(self):
+        
+        #Define test files
+        dataFileIn = './data_onestream/testdata.out'
+        
+        #Read in Data from Test File
+        size = os.path.getsize(dataFileIn)
+        with open (dataFileIn, 'rb') as dataIn:
+            data = list(struct.unpack('h'*(size/2), dataIn.read(size)))
+            
+        #Create Components and Connections
+        print "Launched Component"
+        comp = sb.launch('../FileReader.spd.xml')
+        #comp.log_level(CF.LogLevels.TRACE)
+
+        #comp.advanced_properties.packet_size="10000"
+        comp.advanced_properties.throttle_rate = ""
+        
+        # This filtering should skip the last packet. This time is in the middle of the second packet, so we should get all of the first and second packets
+        comp.advanced_properties.enable_time_filtering = True
+        comp.advanced_properties.stop_time = .00015
+        
+        comp.source_uri = dataFileIn       
+        comp.file_format = 'SHORT'
+        comp.advanced_properties.use_metadata_file = True
+        
+        sink = sb.DataSink()
+        comp.connect(sink, usesPortName='dataShort_out')
+        
+        #Start Components & Push Data
+        sb.start()
+        comp.playback_state = 'PLAY'
+        time.sleep(2)
+        readData,tstamps = sink.getData(tstamps=True)
+        sri = sink.sri()
+        self.assertEqual(sri.streamID, "test_streamID")
+
+        self.assertEqual(sri.keywords[0].id, "TEST_KW2")
+        self.assertEqual(any.from_any(sri.keywords[0].value), "2222")
+        self.assertEqual(sri.keywords[1].id, "TEST_KW1")
+        self.assertEqual(any.from_any(sri.keywords[1].value), 1111)
+
+        self.assertEqual(len(tstamps), 2)
+        self.assertEqual(tstamps[0][0], 0)
+        self.assertAlmostEqual(tstamps[0][1].twsec, 1537799012,10)
+        self.assertAlmostEqual(tstamps[0][1].tfsec, 0.721574068069458,10)
+        self.assertEqual(tstamps[1][0], 1000)
+        self.assertAlmostEqual(tstamps[1][1].twsec, 1537799012,10)
+        self.assertAlmostEqual(tstamps[1][1].tfsec, 0.721842050552368,10)
+        
+        sb.stop()
+         
+        #Check that the input and output files are the same          
+        try:
+            self.assertEqual(data[:2000], readData)
         except self.failureException as e:
             comp.releaseObject()
             sink.releaseObject()
