@@ -30,6 +30,7 @@ from ossie.utils.bluefile import bluefile, bluefile_helpers
 from bulkio.bulkioInterfaces import BULKIO__POA
 from bulkio.sri import create as createSri
 from bulkio.timestamp import create as createTs
+import bulkio
 
 STRING_MAP = {'octet':'B',
               'char':'b',
@@ -580,48 +581,66 @@ class ResourceTests(ossie.utils.testing.ScaComponentTestCase):
         comp.file_format = 'SHORT'
         comp.advanced_properties.use_metadata_file = True
         
-        sink = sb.DataSink()
-        comp.connect(sink, usesPortName='dataShort_out')
+        sink =  bulkio.InShortPort("dataShort_in")
+        port = comp.getPort("dataShort_out")
+        port.connectPort(sink._this(),"TestConnectionID")
+        #comp.connect(sink, usesPortName='dataShort_out')
         
         #Start Components & Push Data
         sb.start()
         comp.playback_state = 'PLAY'
         time.sleep(2)
-        readData,tstamps = sink.getData(tstamps=True)
-        sri = sink.sri()
-        self.assertEqual(sri.streamID, "test_streamID")
 
-        self.assertEqual(sri.keywords[0].id, "TEST_KW2")
-        self.assertEqual(any.from_any(sri.keywords[0].value), "2222")
-        self.assertEqual(sri.keywords[1].id, "TEST_KW1")
-        self.assertEqual(any.from_any(sri.keywords[1].value), 1111)
-        #print tstamps[0],tstamps[1]
-        self.assertEqual(len(tstamps), 3)
-        self.assertEqual(tstamps[0][0], 0, "First timestamp should be for sample 0")
-        self.assertAlmostEqual(tstamps[0][1].twsec, 1537799012,10)
-        self.assertAlmostEqual(tstamps[0][1].tfsec, 0.721574068069458,10)
-        self.assertEqual(tstamps[1][0], 1000, "Second timestamp should be for sample 1000 (first packet had 1000 samples)")
-        self.assertAlmostEqual(tstamps[1][1].twsec, 1537799012,10)
-        self.assertAlmostEqual(tstamps[1][1].tfsec, 0.721842050552368,10)
-        self.assertEqual(tstamps[2][0], 2000, "Third timestamp should be for sample 2000 (second packet had 1000 samples)")
-        self.assertAlmostEqual(tstamps[2][1].twsec, 1537799012,10)
-        self.assertAlmostEqual(tstamps[2][1].tfsec, 0.721976041793823,10)
-        self.assertEqual(len(readData),3000, "Total number of samples sent should be 3000")
-        self.assertTrue(sink.eos(), "EOS should be True")
+        eos = False
+        packetData =[]
+        while (not(eos)):
+            packet= sink.getPacket() #data, T, EOS, streamID, sri, sriChanged, inputQueueFlushed
+            packetData.append(packet)
+            eos = packet[2]
         
-        sb.stop()
-         
-        #Check that the input and output files are the same          
-        try:
-            self.assertEqual(data, readData)
-        except self.failureException as e:
-            comp.releaseObject()
-            sink.releaseObject()
-            raise e
+        #Should have three packets
+        self.assertEqual(len(packetData),3)
+        readdata = []
+        #Verify Packet 1
+        self.assertEqual(len(packetData[0][0]),1000)
+        self.assertAlmostEqual(packetData[0][1].tfsec, 0.721574068069458,10)
+        self.assertAlmostEqual(packetData[0][1].twsec, 1537799012,10)
+        self.assertEqual(packetData[0][2],False)
+        self.assertEqual(packetData[0][3],"test_streamID")
+        self.assertEqual(packetData[0][4].keywords[0].id, "TEST_KW2")
+        self.assertEqual(any.from_any(packetData[0][4].keywords[0].value), "2222")
+        self.assertEqual(packetData[0][4].keywords[1].id, "TEST_KW1")
+        self.assertEqual(any.from_any(packetData[0][4].keywords[1].value), 1111)
+        readdata+=packetData[0][0]
+        
+        #Verify Packet 2
+        self.assertEqual(len(packetData[1][0]),1000)
+        self.assertAlmostEqual(packetData[1][1].tfsec, 0.721842050552368,10)
+        self.assertAlmostEqual(packetData[1][1].twsec, 1537799012,10)
+        self.assertEqual(packetData[1][2],False)
+        self.assertEqual(packetData[1][3],"test_streamID")
+        self.assertEqual(packetData[1][4].keywords[0].id, "TEST_KW2")
+        self.assertEqual(any.from_any(packetData[1][4].keywords[0].value), "2222")
+        self.assertEqual(packetData[1][4].keywords[1].id, "TEST_KW1")
+        self.assertEqual(any.from_any(packetData[1][4].keywords[1].value), 1111)
+        readdata+=packetData[1][0]
+        
+        #Verify Packet 3
+        self.assertEqual(len(packetData[2][0]),1000)
+        self.assertAlmostEqual(packetData[2][1].tfsec, 0.721976041793823,10)
+        self.assertAlmostEqual(packetData[2][1].twsec, 1537799012,10)
+        self.assertEqual(packetData[2][2],True)
+        self.assertEqual(packetData[2][3],"test_streamID")
+        self.assertEqual(packetData[2][4].keywords[0].id, "TEST_KW2")
+        self.assertEqual(any.from_any(packetData[2][4].keywords[0].value), "2222")
+        self.assertEqual(packetData[2][4].keywords[1].id, "TEST_KW1")
+        self.assertEqual(any.from_any(packetData[2][4].keywords[1].value), 1111)
+        readdata+=packetData[2][0]
+        
+        self.assertEqual(data, readdata)
 
         #Release the components and remove the generated files
         comp.releaseObject()
-        sink.releaseObject()
          
         print "........ PASSED\n"
         return
@@ -652,48 +671,55 @@ class ResourceTests(ossie.utils.testing.ScaComponentTestCase):
         comp.file_format = 'SHORT'
         comp.advanced_properties.use_metadata_file = True
         
-        sink = sb.DataSink()
-        comp.connect(sink, usesPortName='dataShort_out')
+        sink =  bulkio.InShortPort("dataShort_in")
+        port = comp.getPort("dataShort_out")
+        port.connectPort(sink._this(),"TestConnectionID")
         
         #Start Components & Push Data
         sb.start()
-        self.assertFalse(sink.eos(), "EOS should be False")
         comp.playback_state = 'PLAY'
         time.sleep(2)
-        readData,tstamps = sink.getData(tstamps=True)
-        self.assertEqual(len(tstamps), 2, "Total number of time stamps read should be 2 (instead got %r)"%len(tstamps))
-        self.assertEqual(len(readData),2000, "Total number of samples read should be 2000 (instead got %r)"%len(readData))
-        self.assertTrue(sink.eos(), "EOS should be True")
-        sri = sink.sri()
-        self.assertEqual(sri.streamID, "test_streamID")
         
-        self.assertEqual(sri.keywords[0].id, "TEST_KW2")
-        self.assertEqual(any.from_any(sri.keywords[0].value), "2222")
-        self.assertEqual(sri.keywords[1].id, "TEST_KW1")
-        self.assertEqual(any.from_any(sri.keywords[1].value), 1111)
-
-        self.assertEqual(tstamps[0][0], 0, "First timestamp should be for sample 0")
-        self.assertAlmostEqual(tstamps[0][1].twsec, 1537799012,10)
-        self.assertAlmostEqual(tstamps[0][1].tfsec, 0.721842050552368,10)
+        eos = False
+        packetData =[]
+        while (not(eos)):
+            packet= sink.getPacket() #data, T, EOS, streamID, sri, sriChanged, inputQueueFlushed
+            packetData.append(packet)
+            eos = packet[2]
         
-        self.assertEqual(tstamps[1][0], 1000, "Second timestamp should be for sample 1000 (first packet had 1000 samples)")
-        self.assertAlmostEqual(tstamps[1][1].twsec, 1537799012,10)
-        self.assertAlmostEqual(tstamps[1][1].tfsec, 0.721976041793823,10)
+        #Should have two packets
+        self.assertEqual(len(packetData),2)
+        readdata = []
+        #Verify Packet 1
+        self.assertEqual(len(packetData[0][0]),1000)
+        self.assertAlmostEqual(packetData[0][1].tfsec, 0.721842050552368,10)
+        self.assertAlmostEqual(packetData[0][1].twsec, 1537799012,10)
+        self.assertEqual(packetData[0][2],False)
+        self.assertEqual(packetData[0][3],"test_streamID")
+        self.assertEqual(packetData[0][4].keywords[0].id, "TEST_KW2")
+        self.assertEqual(any.from_any(packetData[0][4].keywords[0].value), "2222")
+        self.assertEqual(packetData[0][4].keywords[1].id, "TEST_KW1")
+        self.assertEqual(any.from_any(packetData[0][4].keywords[1].value), 1111)
+        readdata+=packetData[0][0]
         
-        sb.stop()
-         
-        #Check that the input and output files are the same          
-        try:
-            self.assertEqual(data[1000:], readData)
-        except self.failureException as e:
-            comp.releaseObject()
-            sink.releaseObject()
-            raise e
-
+        #Verify Packet 2
+        self.assertEqual(len(packetData[1][0]),1000)
+        self.assertAlmostEqual(packetData[1][1].tfsec, 0.721976041793823,10)
+        self.assertAlmostEqual(packetData[1][1].twsec, 1537799012,10)
+        self.assertEqual(packetData[1][2],True)
+        self.assertEqual(packetData[1][3],"test_streamID")
+        self.assertEqual(packetData[1][4].keywords[0].id, "TEST_KW2")
+        self.assertEqual(any.from_any(packetData[1][4].keywords[0].value), "2222")
+        self.assertEqual(packetData[1][4].keywords[1].id, "TEST_KW1")
+        self.assertEqual(any.from_any(packetData[1][4].keywords[1].value), 1111)
+        readdata+=packetData[1][0]
+        
+        #Verify received Data
+        self.assertEqual(data[1000:], readdata)
+        
         #Release the components and remove the generated files
         comp.releaseObject()
-        sink.releaseObject()
-         
+          
         print "........ PASSED\n"
         return
 
@@ -723,48 +749,63 @@ class ResourceTests(ossie.utils.testing.ScaComponentTestCase):
         comp.file_format = 'SHORT'
         comp.advanced_properties.use_metadata_file = True
         
-        sink = sb.DataSink()
-        comp.connect(sink, usesPortName='dataShort_out')
+        sink =  bulkio.InShortPort("dataShort_in")
+        port = comp.getPort("dataShort_out")
+        port.connectPort(sink._this(),"TestConnectionID")
         
         #Start Components & Push Data
         sb.start()
         comp.playback_state = 'PLAY'
         time.sleep(2)
-        readData,tstamps = sink.getData(tstamps=True)
-        sri = sink.sri()
-        self.assertEqual(sri.streamID, "test_streamID")
-
-        self.assertEqual(sri.keywords[0].id, "TEST_KW2")
-        self.assertEqual(any.from_any(sri.keywords[0].value), "2222")
-        self.assertEqual(sri.keywords[1].id, "TEST_KW1")
-        self.assertEqual(any.from_any(sri.keywords[1].value), 1111)
-
-        self.assertEqual(len(tstamps), 2)
-        self.assertEqual(tstamps[0][0], 0, "First timestamp should be for sample 0")
-        self.assertAlmostEqual(tstamps[0][1].twsec, 1537799012,10)
-        self.assertAlmostEqual(tstamps[0][1].tfsec, 0.721574068069458,10)
-        self.assertEqual(tstamps[1][0], 1000, "Second timestamp should be for sample 1000 (first packet had 1000 samples)")
-        self.assertAlmostEqual(tstamps[1][1].twsec, 1537799012,10)
-        self.assertAlmostEqual(tstamps[1][1].tfsec, 0.721842050552368,10)
-        self.assertEqual(len(readData),2000, "Total number of samples sent should be 2000")
-        self.assertTrue(sink.eos(), "EOS should be True")
         
-        sb.stop()
-         
-        #Check that the input and output files are the same          
-        try:
-            self.assertEqual(data[:2000], readData)
-        except self.failureException as e:
-            comp.releaseObject()
-            sink.releaseObject()
-            raise e
-
+        eos = False
+        packetData =[]
+        while (not(eos)):
+            packet= sink.getPacket() #data, T, EOS, streamID, sri, sriChanged, inputQueueFlushed
+            packetData.append(packet)
+            eos = packet[2]
+        
+        #Should have two packets
+        self.assertEqual(len(packetData),3)
+        readdata = []
+        #Verify Packet 1
+        self.assertEqual(len(packetData[0][0]),1000)
+        self.assertAlmostEqual(packetData[0][1].tfsec, 0.721574068069458,10)
+        self.assertAlmostEqual(packetData[0][1].twsec, 1537799012,10)
+        self.assertEqual(packetData[0][2],False)
+        self.assertEqual(packetData[0][3],"test_streamID")
+        self.assertEqual(packetData[0][4].keywords[0].id, "TEST_KW2")
+        self.assertEqual(any.from_any(packetData[0][4].keywords[0].value), "2222")
+        self.assertEqual(packetData[0][4].keywords[1].id, "TEST_KW1")
+        self.assertEqual(any.from_any(packetData[0][4].keywords[1].value), 1111)
+        readdata+=packetData[0][0]
+        
+        #Verify Packet 2
+        self.assertEqual(len(packetData[1][0]),1000)
+        self.assertAlmostEqual(packetData[1][1].tfsec, 0.721842050552368,10)
+        self.assertAlmostEqual(packetData[1][1].twsec, 1537799012,10)
+        self.assertEqual(packetData[1][2],False)
+        self.assertEqual(packetData[1][3],"test_streamID")
+        self.assertEqual(packetData[1][4].keywords[0].id, "TEST_KW2")
+        self.assertEqual(any.from_any(packetData[1][4].keywords[0].value), "2222")
+        self.assertEqual(packetData[1][4].keywords[1].id, "TEST_KW1")
+        self.assertEqual(any.from_any(packetData[1][4].keywords[1].value), 1111)
+        readdata+=packetData[1][0]
+        
+        #Verify Packet 3 - Empty packet with eos
+        self.assertEqual(len(packetData[2][0]),0)
+        self.assertEqual(packetData[2][2],True)
+        self.assertEqual(packetData[2][3],"test_streamID")
+        
+        #Verify received Data
+        self.assertEqual(data[:2000], readdata)
+        
         #Release the components and remove the generated files
         comp.releaseObject()
-        sink.releaseObject()
-         
+          
         print "........ PASSED\n"
         return
+
     
     def testwithBadMetadataFile(self):
         
