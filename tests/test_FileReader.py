@@ -597,15 +597,17 @@ class ResourceTests(ossie.utils.testing.ScaComponentTestCase):
         self.assertEqual(any.from_any(sri.keywords[1].value), 1111)
         #print tstamps[0],tstamps[1]
         self.assertEqual(len(tstamps), 3)
-        self.assertEqual(tstamps[0][0], 0)
+        self.assertEqual(tstamps[0][0], 0, "First timestamp should be for sample 0")
         self.assertAlmostEqual(tstamps[0][1].twsec, 1537799012,10)
         self.assertAlmostEqual(tstamps[0][1].tfsec, 0.721574068069458,10)
-        self.assertEqual(tstamps[1][0], 1000)
+        self.assertEqual(tstamps[1][0], 1000, "Second timestamp should be for sample 1000 (first packet had 1000 samples)")
         self.assertAlmostEqual(tstamps[1][1].twsec, 1537799012,10)
         self.assertAlmostEqual(tstamps[1][1].tfsec, 0.721842050552368,10)
-        self.assertEqual(tstamps[2][0], 2000)
+        self.assertEqual(tstamps[2][0], 2000, "Third timestamp should be for sample 2000 (second packet had 1000 samples)")
         self.assertAlmostEqual(tstamps[2][1].twsec, 1537799012,10)
         self.assertAlmostEqual(tstamps[2][1].tfsec, 0.721976041793823,10)
+        self.assertEqual(len(readData),3000, "Total number of samples sent should be 3000")
+        self.assertTrue(sink.eos(), "EOS should be True")
         
         sb.stop()
          
@@ -655,21 +657,26 @@ class ResourceTests(ossie.utils.testing.ScaComponentTestCase):
         
         #Start Components & Push Data
         sb.start()
+        self.assertFalse(sink.eos(), "EOS should be False")
         comp.playback_state = 'PLAY'
         time.sleep(2)
         readData,tstamps = sink.getData(tstamps=True)
+        self.assertEqual(len(tstamps), 2, "Total number of time stamps read should be 2 (instead got %r)"%len(tstamps))
+        self.assertEqual(len(readData),2000, "Total number of samples read should be 2000 (instead got %r)"%len(readData))
+        self.assertTrue(sink.eos(), "EOS should be True")
         sri = sink.sri()
         self.assertEqual(sri.streamID, "test_streamID")
-
+        
         self.assertEqual(sri.keywords[0].id, "TEST_KW2")
         self.assertEqual(any.from_any(sri.keywords[0].value), "2222")
         self.assertEqual(sri.keywords[1].id, "TEST_KW1")
         self.assertEqual(any.from_any(sri.keywords[1].value), 1111)
 
-        self.assertEqual(len(tstamps), 2)
+        self.assertEqual(tstamps[0][0], 0, "First timestamp should be for sample 0")
         self.assertAlmostEqual(tstamps[0][1].twsec, 1537799012,10)
         self.assertAlmostEqual(tstamps[0][1].tfsec, 0.721842050552368,10)
-        self.assertEqual(tstamps[1][0], 1000)
+        
+        self.assertEqual(tstamps[1][0], 1000, "Second timestamp should be for sample 1000 (first packet had 1000 samples)")
         self.assertAlmostEqual(tstamps[1][1].twsec, 1537799012,10)
         self.assertAlmostEqual(tstamps[1][1].tfsec, 0.721976041793823,10)
         
@@ -733,12 +740,14 @@ class ResourceTests(ossie.utils.testing.ScaComponentTestCase):
         self.assertEqual(any.from_any(sri.keywords[1].value), 1111)
 
         self.assertEqual(len(tstamps), 2)
-        self.assertEqual(tstamps[0][0], 0)
+        self.assertEqual(tstamps[0][0], 0, "First timestamp should be for sample 0")
         self.assertAlmostEqual(tstamps[0][1].twsec, 1537799012,10)
         self.assertAlmostEqual(tstamps[0][1].tfsec, 0.721574068069458,10)
-        self.assertEqual(tstamps[1][0], 1000)
+        self.assertEqual(tstamps[1][0], 1000, "Second timestamp should be for sample 1000 (first packet had 1000 samples)")
         self.assertAlmostEqual(tstamps[1][1].twsec, 1537799012,10)
         self.assertAlmostEqual(tstamps[1][1].tfsec, 0.721842050552368,10)
+        self.assertEqual(len(readData),2000, "Total number of samples sent should be 2000")
+        self.assertTrue(sink.eos(), "EOS should be True")
         
         sb.stop()
          
