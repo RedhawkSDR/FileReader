@@ -806,6 +806,72 @@ class ResourceTests(ossie.utils.testing.ScaComponentTestCase):
         print "........ PASSED\n"
         return
 
+    def testwithMetadataMultipleStreams(self):
+        
+        #Define test files
+        dataFileIn = './data_onestream/'
+        
+        #Read in Data from Test File
+        #size = os.path.getsize(dataFileIn)
+        #with open (dataFileIn, 'rb') as dataIn:
+        #    data = list(struct.unpack('h'*(size/2), dataIn.read(size)))
+            
+        #Create Components and Connections
+        print "Launched Component"
+        comp = sb.launch('../FileReader.spd.xml')
+        #comp.log_level(CF.LogLevels.TRACE)
+
+        #comp.advanced_properties.packet_size="10000"
+        comp.advanced_properties.throttle_rate = ""
+               
+        comp.source_uri = dataFileIn       
+        comp.file_format = 'SHORT'
+        comp.advanced_properties.use_metadata_file = True
+        
+        sink =  bulkio.InShortPort("dataShort_in")
+        port = comp.getPort("dataShort_out")
+        port.connectPort(sink._this(),"TestConnectionID")
+        
+        #Start Components & Push Data
+        sb.start()
+        comp.playback_state = 'PLAY'
+        time.sleep(2)
+        
+        eos = False
+        packetData =[]
+        count = 0 
+        while (count<50):
+            packet= sink.getPacket() #data, T, EOS, streamID, sri, sriChanged, inputQueueFlushed
+            if packet[0]:
+              packetData.append(packet)
+            count+=1
+        
+        #Validate the total number of packets and the correct streamIDs between all the packets. The verification of the contents of packets (data and metadate) are handled in other tests
+        #Should get a total of 7 packets between the three data files
+        self.assertEqual(len(packetData),7)
+        
+        streamID1Count = 0
+        streamID2Count = 0 
+        for packet in packetData:
+            if packet[3]=="test_streamID":
+                streamID1Count +=1
+            elif packet[3]=="test_streamID2":
+                streamID2Count +=1
+            else:
+                self.assertTrue(False, "Should Only received packets with the two known streamIDs")
+        
+        #Validate the number of packets per streamID received.
+        self.assertEqual(streamID1Count, 5, "Should received five packets of stream ID 1")
+        self.assertEqual(streamID2Count, 2, "Should received five packets of stream ID 2")
+        
+        
+        #Release the components and remove the generated files
+        comp.releaseObject()
+          
+        print "........ PASSED\n"
+        return
+
+
     
     def testwithBadMetadataFile(self):
         
