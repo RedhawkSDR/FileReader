@@ -328,6 +328,18 @@ void FileReader_i::start_cache_thread() {
         pkt->dataBuffer.reserve(packet_size);
         available_file_packets.push(pkt);
     }
+
+    //Reset Packet Queue
+    if (metadataQueue) {
+    	delete metadataQueue;
+    }
+    if (MetaDataParser_i) {
+    	delete MetaDataParser_i;
+    }
+    metadataQueue = new bulkio::InLongPort("metadataQueue");
+    metadataQueue->setMaxQueueDepth(1000000);
+    MetaDataParser_i = new MetaDataParser(metadataQueue,&packetSizeQueue);
+
     buffer_thread = new boost::thread(&FileReader_i::read_ahead_thread, this);
 
 }
