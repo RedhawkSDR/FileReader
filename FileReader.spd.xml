@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE softpkg PUBLIC "-//JTRS//DTD SCA V2.2.2 SPD//EN" "softpkg.dtd">
-<softpkg id="DCE:c9070072-16d3-11e5-81d3-3417ebc4aab5" name="rh.FileReader" type="2.0.8" version="4.2.0">
+<softpkg id="DCE:c9070072-16d3-11e5-81d3-3417ebc4aab5" name="rh.FileReader" type="2.0.8" version="5.0.0">
   <title></title>
   <author>
     <name></name>

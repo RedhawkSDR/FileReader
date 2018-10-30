@@ -178,39 +178,39 @@ sca:// 	SCA Filesystem (path relative to SDRROOT/dom)</description>
   </simple>
   <simple id="file_format" mode="readwrite" name="file_format" type="string">
     <description>The format of the data found in the file to be read.</description>
-    <value>SHORT</value>
+    <value>SHORT_LITTLE_ENDIAN</value>
     <enumerations>
       <enumeration label="BLUE/PLATINUM FILE" value="BLUEFILE"/>
       <enumeration label="WAV" value="WAV"/>
       <enumeration label="XML" value="XML"/>
       <enumeration label="SCALAR OCTET (8o)" value="OCTET"/>
       <enumeration label="SCALAR CHAR (8t)" value="CHAR"/>
-      <enumeration label="SCALAR USHORT (16o)" value="USHORT"/>
-      <enumeration label="SCALAR USHORT (16o) byte-swapped" value="USHORT_BYTESWAPPED"/>
-      <enumeration label="SCALAR SHORT (16t)" value="SHORT"/>
-      <enumeration label="SCALAR SHORT (16t) byte-swapped" value="SHORT_BYTESWAPPED"/>
-      <enumeration label="SCALAR ULONG (32o)" value="ULONG"/>
-      <enumeration label="SCALAR ULONG (32o) byte-swapped" value="ULONG_BYTESWAPPED"/>
-      <enumeration label="SCALAR LONG (32t)" value="LONG"/>
-      <enumeration label="SCALAR LONG (32t) byte-swapped" value="LONG_BYTESWAPPED"/>
-      <enumeration label="SCALAR FLOAT (32f)" value="FLOAT"/>
-      <enumeration label="SCALAR FLOAT (32f) byte-swapped" value="FLOAT_BYTESWAPPED"/>
-      <enumeration label="SCALAR DOUBLE (64f)" value="DOUBLE"/>
-      <enumeration label="SCALAR DOUBLE (64f) byte-swapped" value="DOUBLE_BYTESWAPPED"/>
+      <enumeration label="SCALAR USHORT Little Endian (16or)" value="USHORT_LITTLE_ENDIAN"/>
+      <enumeration label="SCALAR USHORT Big Endian (16o)" value="USHORT_BIG_ENDIAN"/>
+      <enumeration label="SCALAR SHORT Little Endian(16tl)" value="SHORT_LITTLE_ENDIAN"/>
+      <enumeration label="SCALAR SHORT Big Endian (16t)" value="SHORT_BIG_ENDIAN"/>
+      <enumeration label="SCALAR ULONG Little Endian(32ol)" value="ULONG_LITTLE_ENDIAN"/>
+      <enumeration label="SCALAR ULONG Big Endian (32o)" value="ULONG__BIG_ENDIAN"/>
+      <enumeration label="SCALAR LONG Little Endian (32tl)" value="LONG_LITTLE_ENDIAN"/>
+      <enumeration label="SCALAR LONG Big Endian (32t)" value="LONG_BIG_ENDIAN"/>
+      <enumeration label="SCALAR FLOAT Little Endian(32fl)" value="FLOAT_LITTLE_ENDIAN"/>
+      <enumeration label="SCALAR FLOAT Big Endian (32f)" value="FLOAT_BIG_ENDIAN"/>
+      <enumeration label="SCALAR DOUBLE Little Endian (64fl)" value="DOUBLE_LITTLE_ENDIAN"/>
+      <enumeration label="SCALAR DOUBLE Big Endian (64f)" value="DOUBLE_BIG_ENDIAN"/>
       <enumeration label="COMPLEX OCTET (8o)" value="COMPLEX_OCTET"/>
       <enumeration label="COMPLEX CHAR (8t)" value="COMPLEX_CHAR"/>
-      <enumeration label="COMPLEX USHORT (16o)" value="COMPLEX_USHORT"/>
-      <enumeration label="COMPLEX USHORT (16o) byte-swapped" value="COMPLEX_USHORT_BYTESWAPPED"/>
-      <enumeration label="COMPLEX SHORT (16t)" value="COMPLEX_SHORT"/>
-      <enumeration label="COMPLEX SHORT (16t) byte-swapped" value="COMPLEX_SHORT_BYTESWAPPED"/>
-      <enumeration label="COMPLEX LONG (32o)" value="COMPLEX_ULONG"/>
-      <enumeration label="COMPLEX LONG (32o) byte-swapped" value="COMPLEX_ULONG_BYTESWAPPED"/>
-      <enumeration label="COMPLEX LONG (32t)" value="COMPLEX_LONG"/>
-      <enumeration label="COMPLEX LONG (32t) byte-swapped" value="COMPLEX_LONG_BYTESWAPPED"/>
-      <enumeration label="COMPLEX FLOAT (32f)" value="COMPLEX_FLOAT"/>
-      <enumeration label="COMPLEX FLOAT (32f) byte-swapped" value="COMPLEX_FLOAT_BYTESWAPPED"/>
-      <enumeration label="COMPLEX DOUBLE (64f)" value="COMPLEX_DOUBLE"/>
-      <enumeration label="COMPLEX DOUBLE (64f) byte-swapped" value="COMPLEX_DOUBLE_BYTESWAPPED"/>
+      <enumeration label="COMPLEX USHORT Little Endian (16ol)" value="COMPLEX_USHORT_LITTLE_ENDIAN"/>
+      <enumeration label="COMPLEX USHORT Big Endian (16o)" value="COMPLEX_USHORT_BIG_ENDIAN"/>
+      <enumeration label="COMPLEX SHORT Little Endian (16tl)" value="COMPLEX_SHORT_LITTLE_ENDIAN"/>
+      <enumeration label="COMPLEX SHORT Big Endian (16t)" value="COMPLEX_SHORT_BIG_ENDIAN"/>
+      <enumeration label="COMPLEX LONG Little Endian (32ol)" value="COMPLEX_ULONG_LITTLE_ENDIAN"/>
+      <enumeration label="COMPLEX LONG Big Endian (32o)" value="COMPLEX_ULONG_BIG_ENDIAN"/>
+      <enumeration label="COMPLEX LONG Little Endian (32tl)" value="COMPLEX_LONG_LITTLE_ENDIAN"/>
+      <enumeration label="COMPLEX LONG Big Endian (32t)" value="COMPLEX_LONG_BIG_ENDIAN"/>
+      <enumeration label="COMPLEX FLOAT Little Endian (32fl)" value="COMPLEX_FLOAT_LITTLE_ENDIAN"/>
+      <enumeration label="COMPLEX FLOAT Big Endian (32f)" value="COMPLEX_FLOAT_BIG_ENDIAN"/>
+      <enumeration label="COMPLEX DOUBLE Little Endian (64fl)" value="COMPLEX_DOUBLE_LITTLE_ENDIAN"/>
+      <enumeration label="COMPLEX DOUBLE Big Endian (64f)" value="COMPLEX_DOUBLE_BIG_ENDIAN"/>
     </enumerations>
     <kind kindtype="property"/>
     <action type="external"/>
@@ -246,6 +246,25 @@ GHz (1e9 Hz)</description>
       <enumeration label="STOP" value="STOP"/>
       <enumeration label="PLAY" value="PLAY"/>
       <enumeration label="PAUSE" value="PAUSE"/>
+    </enumerations>
+    <kind kindtype="property"/>
+    <action type="external"/>
+  </simple>
+  <simple id="output_endianness" mode="readwrite" type="string">
+    <description>This property controls the enidaness of the data being output to BULKIO. By default the component will output the data in the format that is correct for the host that it is running on (Host Order). If it is desired to explicitly set the output to big or little endian then those options can be selected.  </description>
+    <value>hostorder</value>
+    <enumerations>
+      <enumeration label="Little Endian" value="littleendian"/>
+      <enumeration label="Big Endian" value="bigendian"/>
+      <enumeration label="Host Order" value="hostorder"/>
+    </enumerations>
+    <kind kindtype="property"/>
+    <action type="external"/>
+  </simple>
+  <simple id="host_byte_order" mode="readonly" type="string">
+    <enumerations>
+      <enumeration label="Little Endian" value="littleendian"/>
+      <enumeration label="Big Endian" value="bigendian"/>
     </enumerations>
     <kind kindtype="property"/>
     <action type="external"/>
