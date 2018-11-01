@@ -128,7 +128,7 @@ void FileReader_base::loadProperties()
                 "property");
 
     addProperty(file_format,
-                "SHORT",
+                "SHORT_LITTLE_ENDIAN",
                 "file_format",
                 "file_format",
                 "readwrite",
@@ -159,6 +159,23 @@ void FileReader_base::loadProperties()
                 "playback_state",
                 "playback_state",
                 "readwrite",
+                "",
+                "external",
+                "property");
+
+    addProperty(output_bulkio_byte_order,
+                "host_order",
+                "output_bulkio_byte_order",
+                "output_bulkio_byte_order",
+                "readwrite",
+                "",
+                "external",
+                "property");
+
+    addProperty(host_byte_order,
+                "host_byte_order",
+                "host_byte_order",
+                "readonly",
                 "",
                 "external",
                 "property");

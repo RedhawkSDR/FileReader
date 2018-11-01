@@ -228,7 +228,7 @@ void MetaDataParser::endElement(const XML_Char *name) {
                 } else if (lastText =="true" || lastText =="TRUE" || lastText =="True"){
                     currentPacket.EOS = CORBA::Boolean(true);
                 } else {
-                	currentPacket.EOS = (atoi(lastText.c_str()) != 0);
+                    currentPacket.EOS = (atoi(lastText.c_str()) != 0);
                 }
             } else {
                 std::cout<<"ERROR: unknown packet sub-element with name "<<currentElement.name<<std::endl;
