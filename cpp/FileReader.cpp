@@ -78,6 +78,19 @@ void FileReader_i::constructor()
     addPropertyChangeListener("default_timestamp", this, &FileReader_i::default_timestampChanged);
     addPropertyChangeListener("default_sri", this, &FileReader_i::default_sriChanged);
     addPropertyChangeListener("default_sri_keywords", this, &FileReader_i::default_sri_keywordsChanged);
+
+    // Determine host byte order
+    switch(BYTE_ORDER) {
+    case LITTLE_ENDIAN:
+        host_byte_order = "little_endian";
+        break;
+    case BIG_ENDIAN:
+        host_byte_order = "big_endian";
+        break;
+    default:
+        host_byte_order = "little_endian";
+        LOG_ERROR(FileReader_i,"Could not determine host byte order ["<<BYTE_ORDER<<"], defaulting to Little Endian");
+    }
 }
 
 void FileReader_i::initialize() throw (CF::LifeCycle::InitializeError, CORBA::SystemException)
