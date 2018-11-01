@@ -177,7 +177,14 @@ sca:// 	SCA Filesystem (path relative to SDRROOT/dom)</description>
     <action type="external"/>
   </simple>
   <simple id="file_format" mode="readwrite" name="file_format" type="string">
-    <description>The format of the data found in the file to be read.</description>
+    <description>The format of the data found in the file to be read. Each option has up to four components:
+
+Mode: SCALAR (Real) or COMPLEX
+Atom size: 8 (Char/Octet), 16 (Short), 32 (Long/Float), or 64 (LongLong/Double)
+Data type: Unsigned integer, Signed integer, Floating-point
+Byte Order: Big or Little Endian
+
+If the byte order of the input file is different than that of the desired output byte order, byte swapping will occur. The desired output byte order is specified using the output_bulkio_byte_order property, which defaults to host byte order.</description>
     <value>SHORT_LITTLE_ENDIAN</value>
     <enumerations>
       <enumeration label="BLUE/PLATINUM FILE" value="BLUEFILE"/>
@@ -250,18 +257,18 @@ GHz (1e9 Hz)</description>
     <kind kindtype="property"/>
     <action type="external"/>
   </simple>
-  <simple id="output_endianness" mode="readwrite" type="string">
-    <description>This property controls the enidaness of the data being output to BULKIO. By default the component will output the data in the format that is correct for the host that it is running on (Host Order). If it is desired to explicitly set the output to big or little endian then those options can be selected.  </description>
+  <simple id="output_bulkio_byte_order" mode="readwrite" name="output_bulkio_byte_order" type="string">
+    <description>Specifies the byte order (enidaness) of the outgoing BulkIO data. By default, the data will be output with byte order consistent with that of the host (Host Byte Order). If it is desired to explicitly set the output byte order, Big or Little Endian can be selected. Host Byte Order should almost always be used because byte order is converted between hosts by CORBA automatically when necessary.</description>
     <value>host_order</value>
     <enumerations>
+      <enumeration label="Host Byte Order" value="host_order"/>
       <enumeration label="Little Endian" value="little_endian"/>
       <enumeration label="Big Endian" value="big_endian"/>
-      <enumeration label="Host Byte Order" value="host_order"/>
     </enumerations>
     <kind kindtype="property"/>
     <action type="external"/>
   </simple>
-  <simple id="host_byte_order" mode="readonly" type="string">
+  <simple id="host_byte_order" mode="readonly" name="host_byte_order" type="string">
     <description>The native byte order (endianness) of the host system.</description>
     <enumerations>
       <enumeration label="Little Endian" value="little_endian"/>
