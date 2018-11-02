@@ -490,12 +490,11 @@ class ResourceTests(ossie.utils.testing.ScaComponentTestCase):
         #Create Test Data File if it doesn't exist
         if not os.path.isfile(dataFileIn):
             with open(dataFileIn, 'wb') as dataIn:
-                myData = random.sample(range(2000),5)
-                print "Data Sent into Component" , myData
+                myData = random.sample(range(2000),1000)
                 if inputFileEndian=="little_endian":
-                    dataIn.write(struct.pack('<'+'h'*(5), *myData))
+                    dataIn.write(struct.pack('<'+'h'*(1000), *myData))
                 elif inputFileEndian=="big_endian":
-                    dataIn.write(struct.pack('>'+'h'*(5), *myData))
+                    dataIn.write(struct.pack('>'+'h'*(1000), *myData))
         
         #Read in Data from Test File
         size = os.path.getsize(dataFileIn)
@@ -550,14 +549,14 @@ class ResourceTests(ossie.utils.testing.ScaComponentTestCase):
     
     def testShortPortSriScalar(self):
         dataFileIn = './data.in'
-        self.setupBasicSriTest(dataFileIn, 'dataShort_out', 'SHORT')
+        self.setupBasicSriTest(dataFileIn, 'dataShort_out', 'SHORT_LITTLE_ENDIAN')
         self.assertSRIOutputMode(0)
         self.tearDownFlow(dataFileIn)
         print "........ PASSED\n"
     
     def testShortPortSriComplex(self):
         dataFileIn = './data.in'
-        self.setupBasicSriTest(dataFileIn, 'dataShort_out', 'COMPLEX_SHORT')
+        self.setupBasicSriTest(dataFileIn, 'dataShort_out', 'COMPLEX_SHORT_LITTLE_ENDIAN')
         self.assertSRIOutputMode(1)
         self.tearDownFlow(dataFileIn)
         print "........ PASSED\n"
@@ -630,7 +629,7 @@ class ResourceTests(ossie.utils.testing.ScaComponentTestCase):
         #comp.advanced_properties.packet_size="10000"
         comp.advanced_properties.throttle_rate = ""
         comp.source_uri = dataFileIn       
-        comp.file_format = 'SHORT'
+        comp.file_format = 'SHORT_LITTLE_ENDIAN'
         comp.advanced_properties.use_metadata_file = True
         
         sink =  bulkio.InShortPort("dataShort_in")
@@ -720,7 +719,7 @@ class ResourceTests(ossie.utils.testing.ScaComponentTestCase):
         comp.advanced_properties.start_time = .00015
         
         comp.source_uri = dataFileIn       
-        comp.file_format = 'SHORT'
+        comp.file_format = 'SHORT_LITTLE_ENDIAN'
         comp.advanced_properties.use_metadata_file = True
         
         sink =  bulkio.InShortPort("dataShort_in")
@@ -991,6 +990,24 @@ class ResourceTests(ossie.utils.testing.ScaComponentTestCase):
         print "........ PASSED\n"
 
     def testFloatPort(self):
+        return self.FloatPort()
+    
+    def testFloatPortOutputBigEndian(self):
+        return self.FloatPort(outputOrder="big_endian")    
+    
+    def testFloatPortOutputLittleEndian(self):
+        return self.FloatPort(outputOrder="little_endian")      
+    
+    def testFloatPortBigFileOutputHost(self):
+        return self.FloatPort(inputFileEndian="big_endian")   
+
+    def testFloatPortBigFileOutputBig(self):
+        return self.FloatPort(inputFileEndian="big_endian",outputOrder="big_endian")    
+
+    def testFloatPortBigFileOutputLittle(self):
+        return self.FloatPort(inputFileEndian="big_endian",outputOrder="little_endian")
+
+    def FloatPort(self,inputFileEndian="little_endian", outputOrder= "host_order"):
         #######################################################################
         # Test FLOAT Functionality
         print "\n**TESTING FLOAT PORT"
@@ -1008,17 +1025,35 @@ class ResourceTests(ossie.utils.testing.ScaComponentTestCase):
                     floatNum = struct.unpack('f', os.urandom(4))[0]
                     while isnan(floatNum):
                         floatNum = struct.unpack('f', os.urandom(4))[0]
-                    dataIn.write(struct.pack('f', floatNum))
+                    if inputFileEndian=="little":
+                        dataIn.write(struct.pack('<f', floatNum))
+                    elif inputFileEndian=="big":
+                        dataIn.write(struct.pack('>f', floatNum))
+                        
+                    
         
         #Read in Data from Test File
         size = os.path.getsize(dataFileIn)
+        data = []
+        
+        outputEndian = outputOrder
+        if outputEndian == "host_order":
+            outputEndian = sys.byteorder+'_endian'
+        reverseChar = '>'
+        if sys.byteorder == 'big':
+            reverseChar = '<'
+            
         with open (dataFileIn, 'rb') as dataIn:
-            data = list(struct.unpack('f'*(size/4), dataIn.read(size)))
+            #print dataIn.read(size)
+            if inputFileEndian == outputEndian:
+                data = list(struct.unpack('@'+'f'*(size/4), dataIn.read(size)))
+            else:
+                data = list(struct.unpack(reverseChar+'f'*(size/4), dataIn.read(size)))
             
         #Create Components and Connections
         comp = sb.launch('../FileReader.spd.xml')
         comp.source_uri = dataFileIn
-        comp.file_format = 'FLOAT_LITTLE_ENDIAN'
+        comp.file_format='FLOAT_'+inputFileEndian.upper()
         
         sink = sb.DataSink()
         comp.connect(sink, usesPortName='dataFloat_out')
