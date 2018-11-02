@@ -119,8 +119,8 @@ namespace WAV_HELPERS {
     };
 
     inline bool is_waveFileHeader_valid(struct wav_file_header & wfh) {
-    	// Default WAVE file byte ordering is little endian
-    	// WAVE files with big endian byte ordering will start with RIFX instead of RIFF
+        // Default WAVE file byte ordering is little endian
+        // WAVE files with big endian byte ordering will start with RIFX instead of RIFF
         if (!strncmp(wfh.riff.chunk_name, "RIFF", 4) && !strncmp(wfh.format.chunk_name, "fmt ", 4) && !strncmp(wfh.data.chunk_name, "data ", 4)) {
             return true;
         }

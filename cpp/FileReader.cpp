@@ -372,10 +372,10 @@ void FileReader_i::start_cache_thread() {
 
     //Reset Packet Queue
     if (metadataQueue) {
-    	delete metadataQueue;
+        delete metadataQueue;
     }
     if (MetaDataParser_i) {
-    	delete MetaDataParser_i;
+        delete MetaDataParser_i;
     }
     metadataQueue = new bulkio::InLongPort("metadataQueue");
     metadataQueue->setMaxQueueDepth(1000000);
@@ -739,9 +739,9 @@ void FileReader_i::read_ahead_thread() {
                     //   - DO:     if File IS (true) Big Endian and BulkIO output IS NOT (false) Big Endian (true^false=true)
                     //   - DO      if File IS NOT (false) Big Endian and BulkIO output IS (true) Big Endian (false^true=true)
                     if (dd_ptr->endian == SUPPORTED_DATA_TYPE::_keep_endianess_) {
-                    	// Do nothing -- this is for single-byte data types where byte swapping is N/A
+                        // Do nothing -- this is for single-byte data types where byte swapping is N/A
                     } else if (dd_ptr->endian == SUPPORTED_DATA_TYPE::_byte_swap_ ||
-                    	      ((dd_ptr->endian == SUPPORTED_DATA_TYPE::_big_endian_) ^ (BULKIO_BYTE_ORDER == BIG_ENDIAN))) {
+                              ((dd_ptr->endian == SUPPORTED_DATA_TYPE::_big_endian_) ^ (BULKIO_BYTE_ORDER == BIG_ENDIAN))) {
                         pkt->dataBuffer.resize(2.0 * std::ceil(float(pkt->dataBuffer.size())/2.0));
                         if (dd_ptr->bytes_per_element == sizeof (uint16_t)) {
                             std::vector<uint16_t> *svp = (std::vector<uint16_t> *) & pkt->dataBuffer;
