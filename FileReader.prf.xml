@@ -177,7 +177,7 @@ sca:// 	SCA Filesystem (path relative to SDRROOT/dom)</description>
     <action type="external"/>
   </simple>
   <simple id="file_format" mode="readwrite" name="file_format" type="string">
-    <description>The format of the data found in the file to be read. Each option has up to four components:
+    <description>The format of the data found in the file to be read. The BLUEFILE  and WAV options rely on the file header for the full description of the data to be read. Each other option fully describes the data to be read, and most options have up to four components:
 
 Mode: SCALAR (Real) or COMPLEX
 Atom size: 8 (Char/Octet), 16 (Short), 32 (Long/Float), or 64 (LongLong/Double)
@@ -258,7 +258,7 @@ GHz (1e9 Hz)</description>
     <action type="external"/>
   </simple>
   <simple id="output_bulkio_byte_order" mode="readwrite" name="output_bulkio_byte_order" type="string">
-    <description>Specifies the byte order (enidaness) of the outgoing BulkIO data. By default, the data will be output with byte order consistent with that of the host (Host Byte Order). If it is desired to explicitly set the output byte order, Big or Little Endian can be selected. Host Byte Order should almost always be used because byte order is converted between hosts by CORBA automatically when necessary.</description>
+    <description>Specifies the byte order (enidaness) of the outgoing BulkIO data. By default, the data will be output with byte order consistent with that of the host (Host Byte Order). If it is desired to explicitly set the output byte order, Big or Little Endian can be selected. If the output BulkIO byte order is different from the byte order of the input file, byte swapping will occur. Host Byte Order should almost always be used because byte order is converted between hosts by CORBA automatically when necessary.</description>
     <value>host_order</value>
     <enumerations>
       <enumeration label="Host Byte Order" value="host_order"/>
