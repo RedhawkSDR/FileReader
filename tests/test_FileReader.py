@@ -24,6 +24,7 @@ from omniORB import any
 import time
 from ossie.utils import sb
 import struct
+import random
 from math import isnan
 from ossie.properties import props_from_dict, props_to_dict
 from ossie.utils.bluefile import bluefile, bluefile_helpers
@@ -447,6 +448,24 @@ class ResourceTests(ossie.utils.testing.ScaComponentTestCase):
         return
     
     def testShortPort(self):
+        return self.ShortPort()
+    
+    def testShortPortOutputBigEndian(self):
+        return self.ShortPort(outputOrder="big_endian")    
+    
+    def testShortPortOutputLittleEndian(self):
+        return self.ShortPort(outputOrder="little_endian")      
+    
+    def testShortPortBigFileOutputHost(self):
+        return self.ShortPort(inputFileEndian="big")   
+
+    def testShortPortBigFileOutputBig(self):
+        return self.ShortPort(inputFileEndian="big",outputOrder="big_endian")    
+
+    def testShortPortBigFileOutputLittle(self):
+        return self.ShortPort(inputFileEndian="big",outputOrder="little_endian")
+    
+    def ShortPort(self,inputFileEndian="little", outputOrder= "host_order"):
         #######################################################################
         # Test SHORT Functionality
         print "\n**TESTING SHORT PORT"
@@ -457,17 +476,40 @@ class ResourceTests(ossie.utils.testing.ScaComponentTestCase):
         #Create Test Data File if it doesn't exist
         if not os.path.isfile(dataFileIn):
             with open(dataFileIn, 'wb') as dataIn:
-                dataIn.write(os.urandom(1024))
+                if inputFileEndian=="little":
+                    myData = random.sample(range(2000),5)
+                    print "Data Sent into Component" , myData
+                    dataIn.write(struct.pack('<'+'h'*(5), *myData))
+                    #dataIn.write(struct.pack('<'+'h'*(5), *random.sample(range(2000),5)))
+                elif inputFileEndian=="big":
+                    myData = random.sample(range(2000),5)
+                    print "Data Sent into Component" , myData
+                    dataIn.write(struct.pack('>'+'h'*(5), *myData))
+                    #dataIn.write(struct.pack('>'+'h'*(5), *random.sample(range(2000),5)))
         
         #Read in Data from Test File
         size = os.path.getsize(dataFileIn)
+        data = []
+         
         with open (dataFileIn, 'rb') as dataIn:
-            data = list(struct.unpack('h'*(size/2), dataIn.read(size)))
+            #print dataIn.read(size)
+            if outputOrder =="host_order":
+                data = list(struct.unpack('@'+'h'*(size/2), dataIn.read(size)))
+            elif outputOrder =="big_endian":
+                data = list(struct.unpack('>'+'h'*(size/2), dataIn.read(size)))
+            elif outputOrder =="little_endian":
+                data = list(struct.unpack('<'+'h'*(size/2), dataIn.read(size)))
+                
             
         #Create Components and Connections
         comp = sb.launch('../FileReader.spd.xml')
         comp.source_uri = dataFileIn
-        comp.file_format = 'SHORT'
+        comp.output_bulkio_byte_order= outputOrder
+        if inputFileEndian=="little":
+            comp.file_format='SHORT_LITTLE_ENDIAN'
+        elif inputFileEndian=="big":
+            comp.file_format='SHORT_BIG_ENDIAN'
+        
         
         sink = sb.DataSink()
         comp.connect(sink, usesPortName='dataShort_out')
@@ -746,7 +788,7 @@ class ResourceTests(ossie.utils.testing.ScaComponentTestCase):
         comp.advanced_properties.stop_time = .00015
         
         comp.source_uri = dataFileIn       
-        comp.file_format = 'SHORT'
+        comp.file_format = 'SHORT_LITTLE_ENDIAN'
         comp.advanced_properties.use_metadata_file = True
         
         sink =  bulkio.InShortPort("dataShort_in")
@@ -825,7 +867,7 @@ class ResourceTests(ossie.utils.testing.ScaComponentTestCase):
         comp.advanced_properties.throttle_rate = ""
                
         comp.source_uri = dataFileIn       
-        comp.file_format = 'SHORT'
+        comp.file_format = 'SHORT_LITTLE_ENDIAN'
         comp.advanced_properties.use_metadata_file = True
         
         sink =  bulkio.InShortPort("dataShort_in")
@@ -897,7 +939,7 @@ class ResourceTests(ossie.utils.testing.ScaComponentTestCase):
         #comp.advanced_properties.packet_size="10000"
         comp.advanced_properties.throttle_rate = ""
         comp.source_uri = dataFileIn       
-        comp.file_format = 'SHORT'
+        comp.file_format = 'SHORT_LITTLE_ENDIAN'
         comp.advanced_properties.use_metadata_file = True
         
         sink = sb.DataSink()
@@ -926,14 +968,14 @@ class ResourceTests(ossie.utils.testing.ScaComponentTestCase):
 
     def testUshortPortSriScalar(self):
         dataFileIn = './data.in'
-        self.setupBasicSriTest(dataFileIn, 'dataUshort_out', 'USHORT')
+        self.setupBasicSriTest(dataFileIn, 'dataUshort_out', 'USHORT_LITTLE_ENDIAN')
         self.assertSRIOutputMode(0)
         self.tearDownFlow(dataFileIn)
         print "........ PASSED\n"
     
     def testShortPortSriComplex(self):
         dataFileIn = './data.in'
-        self.setupBasicSriTest(dataFileIn, 'dataUshort_out', 'COMPLEX_USHORT')
+        self.setupBasicSriTest(dataFileIn, 'dataUshort_out', 'COMPLEX_USHORT_LITTLE_ENDIAN')
         self.assertSRIOutputMode(1)
         self.tearDownFlow(dataFileIn)
         print "........ PASSED\n"
@@ -966,7 +1008,7 @@ class ResourceTests(ossie.utils.testing.ScaComponentTestCase):
         #Create Components and Connections
         comp = sb.launch('../FileReader.spd.xml')
         comp.source_uri = dataFileIn
-        comp.file_format = 'FLOAT'
+        comp.file_format = 'FLOAT_LITTLE_ENDIAN'
         
         sink = sb.DataSink()
         comp.connect(sink, usesPortName='dataFloat_out')
@@ -997,14 +1039,14 @@ class ResourceTests(ossie.utils.testing.ScaComponentTestCase):
     
     def testFloatPortSriScalar(self):
         dataFileIn = './data.in'
-        self.setupBasicSriTest(dataFileIn, 'dataFloat_out', 'FLOAT')
+        self.setupBasicSriTest(dataFileIn, 'dataFloat_out', 'FLOAT_LITTLE_ENDIAN')
         self.assertSRIOutputMode(0)
         self.tearDownFlow(dataFileIn)
         print "........ PASSED\n"
     
     def testFloatPortSriComplex(self):
         dataFileIn = './data.in'
-        self.setupBasicSriTest(dataFileIn, 'dataFloat_out', 'COMPLEX_FLOAT')
+        self.setupBasicSriTest(dataFileIn, 'dataFloat_out', 'COMPLEX_FLOAT_LITTLE_ENDIAN')
         self.assertSRIOutputMode(1)
         self.tearDownFlow(dataFileIn)
         print "........ PASSED\n"
@@ -1037,7 +1079,7 @@ class ResourceTests(ossie.utils.testing.ScaComponentTestCase):
         #Create Components and Connections
         comp = sb.launch('../FileReader.spd.xml')
         comp.source_uri = dataFileIn
-        comp.file_format = 'DOUBLE'
+        comp.file_format = 'DOUBLE_LITTLE_ENDIAN'
         
         sink = sb.DataSink()
         comp.connect(sink, usesPortName='dataDouble_out')
@@ -1068,14 +1110,14 @@ class ResourceTests(ossie.utils.testing.ScaComponentTestCase):
     
     def testDoublePortSriScalar(self):
         dataFileIn = './data.in'
-        self.setupBasicSriTest(dataFileIn, 'dataDouble_out', 'DOUBLE')
+        self.setupBasicSriTest(dataFileIn, 'dataDouble_out', 'DOUBLE_LITTLE_ENDIAN')
         self.assertSRIOutputMode(0)
         self.tearDownFlow(dataFileIn)
         print "........ PASSED\n"
     
     def testDoublePortSriComplex(self):
         dataFileIn = './data.in'
-        self.setupBasicSriTest(dataFileIn, 'dataDouble_out', 'COMPLEX_DOUBLE')
+        self.setupBasicSriTest(dataFileIn, 'dataDouble_out', 'COMPLEX_DOUBLE_LITTLE_ENDIAN')
         self.assertSRIOutputMode(1)
         self.tearDownFlow(dataFileIn)
         print "........ PASSED\n"
