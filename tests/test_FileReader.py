@@ -19,7 +19,7 @@
 
 import ossie.utils.testing
 from ossie.cf import CF
-import os
+import os, sys
 from omniORB import any
 import time
 from ossie.utils import sb
@@ -32,6 +32,8 @@ from bulkio.bulkioInterfaces import BULKIO__POA
 from bulkio.sri import create as createSri
 from bulkio.timestamp import create as createTs
 import bulkio
+
+DEBUG_LEVEL = 3
 
 STRING_MAP = {'octet':'B',
               'char':'b',
@@ -448,24 +450,36 @@ class ResourceTests(ossie.utils.testing.ScaComponentTestCase):
         return
     
     def testShortPort(self):
+        # Input:  little
+        # Output: host
         return self.ShortPort()
     
     def testShortPortOutputBigEndian(self):
+        # Input:  little
+        # Output: big
         return self.ShortPort(outputOrder="big_endian")    
     
     def testShortPortOutputLittleEndian(self):
+        # Input:  little
+        # Output: little
         return self.ShortPort(outputOrder="little_endian")      
     
     def testShortPortBigFileOutputHost(self):
-        return self.ShortPort(inputFileEndian="big")   
+        # Input:  big
+        # Output: host
+        return self.ShortPort(inputFileEndian="big_endian")   
 
     def testShortPortBigFileOutputBig(self):
-        return self.ShortPort(inputFileEndian="big",outputOrder="big_endian")    
+        # Input:  big
+        # Output: big
+        return self.ShortPort(inputFileEndian="big_endian",outputOrder="big_endian")    
 
     def testShortPortBigFileOutputLittle(self):
-        return self.ShortPort(inputFileEndian="big",outputOrder="little_endian")
+        # Input:  big
+        # Output: little
+        return self.ShortPort(inputFileEndian="big_endian",outputOrder="little_endian")
     
-    def ShortPort(self,inputFileEndian="little", outputOrder= "host_order"):
+    def ShortPort(self,inputFileEndian="little_endian", outputOrder= "host_order"):
         #######################################################################
         # Test SHORT Functionality
         print "\n**TESTING SHORT PORT"
@@ -476,40 +490,36 @@ class ResourceTests(ossie.utils.testing.ScaComponentTestCase):
         #Create Test Data File if it doesn't exist
         if not os.path.isfile(dataFileIn):
             with open(dataFileIn, 'wb') as dataIn:
-                if inputFileEndian=="little":
-                    myData = random.sample(range(2000),5)
-                    print "Data Sent into Component" , myData
+                myData = random.sample(range(2000),5)
+                print "Data Sent into Component" , myData
+                if inputFileEndian=="little_endian":
                     dataIn.write(struct.pack('<'+'h'*(5), *myData))
-                    #dataIn.write(struct.pack('<'+'h'*(5), *random.sample(range(2000),5)))
-                elif inputFileEndian=="big":
-                    myData = random.sample(range(2000),5)
-                    print "Data Sent into Component" , myData
+                elif inputFileEndian=="big_endian":
                     dataIn.write(struct.pack('>'+'h'*(5), *myData))
-                    #dataIn.write(struct.pack('>'+'h'*(5), *random.sample(range(2000),5)))
         
         #Read in Data from Test File
         size = os.path.getsize(dataFileIn)
         data = []
-         
+        
+        outputEndian = outputOrder
+        if outputEndian == "host_order":
+            outputEndian = sys.byteorder+'_endian'
+        reverseChar = '>'
+        if sys.byteorder == 'big':
+            reverseChar = '<'
+            
         with open (dataFileIn, 'rb') as dataIn:
             #print dataIn.read(size)
-            if outputOrder =="host_order":
+            if inputFileEndian == outputEndian:
                 data = list(struct.unpack('@'+'h'*(size/2), dataIn.read(size)))
-            elif outputOrder =="big_endian":
-                data = list(struct.unpack('>'+'h'*(size/2), dataIn.read(size)))
-            elif outputOrder =="little_endian":
-                data = list(struct.unpack('<'+'h'*(size/2), dataIn.read(size)))
-                
+            else:
+                data = list(struct.unpack(reverseChar+'h'*(size/2), dataIn.read(size)))
             
         #Create Components and Connections
-        comp = sb.launch('../FileReader.spd.xml')
+        comp = sb.launch('../FileReader.spd.xml', execparams={'DEBUG_LEVEL':DEBUG_LEVEL})
         comp.source_uri = dataFileIn
         comp.output_bulkio_byte_order= outputOrder
-        if inputFileEndian=="little":
-            comp.file_format='SHORT_LITTLE_ENDIAN'
-        elif inputFileEndian=="big":
-            comp.file_format='SHORT_BIG_ENDIAN'
-        
+        comp.file_format='SHORT_'+inputFileEndian.upper()
         
         sink = sb.DataSink()
         comp.connect(sink, usesPortName='dataShort_out')
