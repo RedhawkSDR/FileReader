@@ -217,15 +217,15 @@ public:
 
 private:
     // Property change listener methods
-    void advanced_propertiesChanged(const advanced_properties_struct *oldValue, const advanced_properties_struct *newValue);
-    void source_uriChanged(const std::string *oldValue, const std::string *newValue);
-    void file_formatChanged(const std::string *oldValue, const std::string *newValue);
-    void sample_rateChanged(const std::string *oldValue, const std::string *newValue);
-    void center_frequencyChanged(const std::string *oldValue, const std::string *newValue);
-    void playback_stateChanged(const std::string *oldValue, const std::string *newValue);
-    void default_timestampChanged(const default_timestamp_struct *oldValue, const default_timestamp_struct *newValue);
-    void default_sriChanged(const default_sri_struct *oldValue, const default_sri_struct *newValue);
-    void default_sri_keywordsChanged(const std::vector<sri_keywords_struct_struct> *oldValue, const std::vector<sri_keywords_struct_struct> *newValue);
+    void advanced_propertiesChanged(const advanced_properties_struct &oldValue, const advanced_properties_struct &newValue);
+    void source_uriChanged(std::string oldValue, std::string newValue);
+    void file_formatChanged(std::string oldValue, std::string newValue);
+    void sample_rateChanged(std::string oldValue, std::string newValue);
+    void center_frequencyChanged(std::string oldValue, std::string newValue);
+    void playback_stateChanged(std::string oldValue, std::string newValue);
+    void default_timestampChanged(const default_timestamp_struct &oldValue, const default_timestamp_struct &newValue);
+    void default_sriChanged(const default_sri_struct &oldValue, const default_sri_struct &newValue);
+    void default_sri_keywordsChanged(const std::vector<sri_keywords_struct_struct> &oldValue, const std::vector<sri_keywords_struct_struct> &newValue);
     void output_bulkio_byte_orderChanged(std::string oldValue, std::string newValue);
 
     // Property change listener helper methods

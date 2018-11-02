@@ -69,15 +69,16 @@ void FileReader_i::constructor()
     MetaDataParser_i = new MetaDataParser(metadataQueue,&packetSizeQueue);
 
     //properties are not updated until callback function is called and they are explicitly
-    addPropertyChangeListener("advanced_properties", this, &FileReader_i::advanced_propertiesChanged);
-    addPropertyChangeListener("source_uri", this, &FileReader_i::source_uriChanged);
-    addPropertyChangeListener("file_format", this, &FileReader_i::file_formatChanged);
-    addPropertyChangeListener("sample_rate", this, &FileReader_i::sample_rateChanged);
-    addPropertyChangeListener("center_frequency", this, &FileReader_i::center_frequencyChanged);
-    addPropertyChangeListener("playback_state", this, &FileReader_i::playback_stateChanged);
-    addPropertyChangeListener("default_timestamp", this, &FileReader_i::default_timestampChanged);
-    addPropertyChangeListener("default_sri", this, &FileReader_i::default_sriChanged);
-    addPropertyChangeListener("default_sri_keywords", this, &FileReader_i::default_sri_keywordsChanged);
+    addPropertyListener(advanced_properties, this, &FileReader_i::advanced_propertiesChanged);
+    addPropertyListener(source_uri, this, &FileReader_i::source_uriChanged);
+    addPropertyListener(file_format, this, &FileReader_i::file_formatChanged);
+    addPropertyListener(sample_rate, this, &FileReader_i::sample_rateChanged);
+    addPropertyListener(center_frequency, this, &FileReader_i::center_frequencyChanged);
+    addPropertyListener(playback_state, this, &FileReader_i::playback_stateChanged);
+    addPropertyListener(default_timestamp, this, &FileReader_i::default_timestampChanged);
+    addPropertyListener(default_sri, this, &FileReader_i::default_sriChanged);
+    addPropertyListener(default_sri_keywords, this, &FileReader_i::default_sri_keywordsChanged);
+    addPropertyListener(output_bulkio_byte_order, this, &FileReader_i::output_bulkio_byte_orderChanged);
 
     // Determine host byte order
     switch(BYTE_ORDER) {
@@ -91,6 +92,7 @@ void FileReader_i::constructor()
         host_byte_order = "little_endian";
         LOG_ERROR(FileReader_i,"Could not determine host byte order ["<<BYTE_ORDER<<"], defaulting to Little Endian");
     }
+    LOG_DEBUG(FileReader_i,"Host byte order is "<<host_byte_order);
 
     // Determine BulkIO output byte order
     if (output_bulkio_byte_order == "little_endian") {
@@ -100,6 +102,8 @@ void FileReader_i::constructor()
     } else { // host_order
         BULKIO_BYTE_ORDER = BYTE_ORDER;
     }
+    LOG_DEBUG(FileReader_i,"output_bulkio_byte_order set to "<<output_bulkio_byte_order);
+    LOG_DEBUG(FileReader_i,"Output BulkIO byte order set to "<<BULKIO_BYTE_ORDER<<" (L=1234,B=4321)");
 }
 
 void FileReader_i::initialize() throw (CF::LifeCycle::InitializeError, CORBA::SystemException)
@@ -160,61 +164,61 @@ void FileReader_i::stop() throw (CF::Resource::StopError, CORBA::SystemException
     } catch(...){};
 }
 
-void FileReader_i::advanced_propertiesChanged(const advanced_properties_struct *oldValue, const advanced_properties_struct *newValue) {
+void FileReader_i::advanced_propertiesChanged(const advanced_properties_struct &oldValue, const advanced_properties_struct &newValue) {
     exclusive_lock lock(service_thread_lock);
     LOG_TRACE(FileReader_i,"FileReader_i::advanced_propertiesChanged - ENTER");
 
     // These properties affect the manner in which the file is read, so the restart_read_ahead_caching
     // function should be called
-    if (oldValue->buffer_size != newValue->buffer_size || oldValue->packet_size != newValue->packet_size ||
-            oldValue->looping != newValue->looping || oldValue->looping_suppress_eos_until_stop != newValue->looping_suppress_eos_until_stop
-            || oldValue->use_metadata_file != newValue->use_metadata_file) {
+    if (oldValue.buffer_size != newValue.buffer_size || oldValue.packet_size != newValue.packet_size ||
+            oldValue.looping != newValue.looping || oldValue.looping_suppress_eos_until_stop != newValue.looping_suppress_eos_until_stop
+            || oldValue.use_metadata_file != newValue.use_metadata_file) {
         restart_read_ahead_caching();
     }
     // This property affects the SRI, so the reconstruct_property_sri function should be called
-    if (oldValue->center_frequency_keywords != newValue->center_frequency_keywords) {
+    if (oldValue.center_frequency_keywords != newValue.center_frequency_keywords) {
         reconstruct_property_sri(current_sample_rate);
     }
     // This property affects the throttle, so the reset_throttle function should be called
-    if (oldValue->throttle_rate != newValue->throttle_rate) {
+    if (oldValue.throttle_rate != newValue.throttle_rate) {
         reset_throttle();
     }
 }
 
-void FileReader_i::source_uriChanged(const std::string *oldValue, const std::string *newValue) {
+void FileReader_i::source_uriChanged(std::string oldValue, std::string newValue) {
     exclusive_lock lock(service_thread_lock);
     LOG_TRACE(FileReader_i,"FileReader_i::source_uriChanged - ENTER");
 
-    if (*oldValue != *newValue) {
+    if (oldValue != newValue) {
         try {
             restart_read_ahead_caching();
         } catch(...) {
-            source_uri = *oldValue;
+            source_uri = oldValue;
             throw;
         }
     }
 }
 
-void FileReader_i::file_formatChanged(const std::string *oldValue, const std::string *newValue) {
+void FileReader_i::file_formatChanged(std::string oldValue, std::string newValue) {
     exclusive_lock lock(service_thread_lock);
     LOG_TRACE(FileReader_i,"FileReader_i::file_formatChanged - ENTER");
 
-    if (*oldValue != *newValue) {
+    if (oldValue != newValue) {
         restart_read_ahead_caching();
     }
     reconstruct_property_sri(current_sample_rate);
 }
 
-void FileReader_i::sample_rateChanged(const std::string *oldValue, const std::string *newValue) {
+void FileReader_i::sample_rateChanged(std::string oldValue, std::string newValue) {
     exclusive_lock lock(service_thread_lock);
     LOG_TRACE(FileReader_i,"FileReader_i::sample_rateChanged - ENTER");
 
-    if (*oldValue != *newValue) {
+    if (oldValue != newValue) {
         if (file_format == "BLUEFILE") {
             LOG_WARN(FileReader_i, "Ignoring attempt to set sample rate while reading blue file");
-            sample_rate = *oldValue;
+            sample_rate = oldValue;
         } else {
-            sample_rate_d = STD_STRING_HELPER::SPS_string_to_number(*newValue);
+            sample_rate_d = STD_STRING_HELPER::SPS_string_to_number(newValue);
             current_sample_rate = sample_rate_d;
             reset_throttle();
             reconstruct_property_sri(current_sample_rate);
@@ -223,26 +227,20 @@ void FileReader_i::sample_rateChanged(const std::string *oldValue, const std::st
     }
 }
 
-void FileReader_i::center_frequencyChanged(const std::string *oldValue, const std::string *newValue) {
+void FileReader_i::center_frequencyChanged(std::string oldValue, std::string newValue) {
     exclusive_lock lock(service_thread_lock);
 
-    if (*oldValue != *newValue) {
-        center_frequency_d = STD_STRING_HELPER::HZ_string_to_number(*newValue);
+    if (oldValue != newValue) {
+        center_frequency_d = STD_STRING_HELPER::HZ_string_to_number(newValue);
         reconstruct_property_sri(current_sample_rate);
     }
 }
 
-void FileReader_i::playback_stateChanged(const std::string *oldValue, const std::string *newValue) {
+void FileReader_i::playback_stateChanged(std::string oldValue, std::string newValue) {
     exclusive_lock lock(service_thread_lock);
-    if (oldValue && newValue) {
-        LOG_TRACE(FileReader_i,"FileReader_i::playback_stateChanged - ENTER - oldValue="<<*oldValue<<"  newValue="<<*newValue);
-    } else if (newValue) {
-        LOG_TRACE(FileReader_i,"FileReader_i::playback_stateChanged - ENTER - newValue="<<*newValue);
-    } else {
-        LOG_TRACE(FileReader_i,"FileReader_i::playback_stateChanged - ENTER");
-    }
+    LOG_TRACE(FileReader_i,"FileReader_i::playback_stateChanged - ENTER - oldValue="<<oldValue<<"  newValue="<<newValue);
 
-    if (*oldValue != *newValue) {
+    if (oldValue != newValue) {
         if (playback_state == "STOP") {
             std::vector<char> empty_vector;
             restart_read_ahead_caching();
@@ -268,17 +266,17 @@ void FileReader_i::playback_stateChanged(const std::string *oldValue, const std:
     }
 }
 
-void FileReader_i::default_timestampChanged(const default_timestamp_struct *oldValue, const default_timestamp_struct *newValue) {
+void FileReader_i::default_timestampChanged(const default_timestamp_struct &oldValue, const default_timestamp_struct &newValue) {
     exclusive_lock lock(service_thread_lock);
     reconstruct_property_timestamp();
 }
 
-void FileReader_i::default_sriChanged(const default_sri_struct *oldValue, const default_sri_struct *newValue) {
+void FileReader_i::default_sriChanged(const default_sri_struct &oldValue, const default_sri_struct &newValue) {
     exclusive_lock lock(service_thread_lock);
     reconstruct_property_sri(current_sample_rate);
 }
 
-void FileReader_i::default_sri_keywordsChanged(const std::vector<sri_keywords_struct_struct> *oldValue, const std::vector<sri_keywords_struct_struct> *newValue) {
+void FileReader_i::default_sri_keywordsChanged(const std::vector<sri_keywords_struct_struct> &oldValue, const std::vector<sri_keywords_struct_struct> &newValue) {
     exclusive_lock lock(service_thread_lock);
     reconstruct_property_sri(current_sample_rate);
 }
@@ -287,19 +285,23 @@ void FileReader_i::output_bulkio_byte_orderChanged(std::string oldValue, std::st
     exclusive_lock lock(service_thread_lock);
     if (oldValue != newValue) {
         if (newValue == "little_endian") {
-            LOG_DEBUG(FileReader_i,"input_bulkio_byte_order changed from "<<oldValue<<" to "<<newValue);
+            LOG_DEBUG(FileReader_i,"output_bulkio_byte_order changed from "<<oldValue<<" to "<<newValue);
             BULKIO_BYTE_ORDER = LITTLE_ENDIAN;
+            restart_read_ahead_caching();
         } else if (newValue ==  "big_endian") {
-            LOG_DEBUG(FileReader_i,"input_bulkio_byte_order changed from "<<oldValue<<" to "<<newValue);
+            LOG_DEBUG(FileReader_i,"output_bulkio_byte_order changed from "<<oldValue<<" to "<<newValue);
             BULKIO_BYTE_ORDER = BIG_ENDIAN;
+            restart_read_ahead_caching();
         } else if (newValue == "host_order") {
-            LOG_DEBUG(FileReader_i,"input_bulkio_byte_order changed from "<<oldValue<<" to "<<newValue);
+            LOG_DEBUG(FileReader_i,"output_bulkio_byte_order changed from "<<oldValue<<" to "<<newValue);
             BULKIO_BYTE_ORDER = BYTE_ORDER;
+            restart_read_ahead_caching();
         } else {
             LOG_ERROR(FileReader_i,"Configured with invalid output_bulkio_byte_order value: "<<newValue<<"; Reverting back to previous value: "<<oldValue);
             output_bulkio_byte_order = oldValue;
         }
     }
+    LOG_DEBUG(FileReader_i,"Output BulkIO byte order set to "<<BULKIO_BYTE_ORDER<<" (L=1234,B=4321)");
 }
 
 void FileReader_i::restart_read_ahead_caching() {
@@ -738,18 +740,26 @@ void FileReader_i::read_ahead_thread() {
                     //   - DO:     if explicitly set to byte swap (Not used in FileReader, but here for completeness)
                     //   - DO:     if File IS (true) Big Endian and BulkIO output IS NOT (false) Big Endian (true^false=true)
                     //   - DO      if File IS NOT (false) Big Endian and BulkIO output IS (true) Big Endian (false^true=true)
+                    LOG_DEBUG(FileReader_i,"read_ahead_thread - bpe:"<<dd_ptr->bytes_per_element
+                                                       <<"  endian:"<<dd_ptr->endian<<"(0Big,1Little,2Swap,3Keep)"
+                                                       <<"  BulkIO_BYTE_ORDER:"<<BULKIO_BYTE_ORDER<<"(1234L,4321B)");
                     if (dd_ptr->endian == SUPPORTED_DATA_TYPE::_keep_endianess_) {
                         // Do nothing -- this is for single-byte data types where byte swapping is N/A
+                        LOG_DEBUG(FileReader_i,"read_ahead_thread - not swapping single-Byte data.");
                     } else if (dd_ptr->endian == SUPPORTED_DATA_TYPE::_byte_swap_ ||
                               ((dd_ptr->endian == SUPPORTED_DATA_TYPE::_big_endian_) ^ (BULKIO_BYTE_ORDER == BIG_ENDIAN))) {
+                        LOG_DEBUG(FileReader_i,"Swapping...");
                         pkt->dataBuffer.resize(2.0 * std::ceil(float(pkt->dataBuffer.size())/2.0));
                         if (dd_ptr->bytes_per_element == sizeof (uint16_t)) {
+                            LOG_DEBUG(FileReader_i,"Swapping 16");
                             std::vector<uint16_t> *svp = (std::vector<uint16_t> *) & pkt->dataBuffer;
                             std::transform(svp->begin(), svp->end(), svp->begin(), Byte_Swap16<uint16_t>);
                         } else if (dd_ptr->bytes_per_element == sizeof (uint32_t)) {
+                            LOG_DEBUG(FileReader_i,"Swapping 32");
                             std::vector<uint32_t> *svp = (std::vector<uint32_t> *) & pkt->dataBuffer;
                             std::transform(svp->begin(), svp->end(), svp->begin(), Byte_Swap32<uint32_t>);
                         } else if (dd_ptr->bytes_per_element == sizeof (uint64_t)) {
+                            LOG_DEBUG(FileReader_i,"Swapping 64");
                             std::vector<uint64_t> *svp = (std::vector<uint64_t> *) & pkt->dataBuffer;
                             std::transform(svp->begin(), svp->end(), svp->begin(), Byte_Swap32<uint64_t>);
                         }
