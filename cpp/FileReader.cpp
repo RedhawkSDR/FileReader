@@ -91,6 +91,15 @@ void FileReader_i::constructor()
         host_byte_order = "little_endian";
         LOG_ERROR(FileReader_i,"Could not determine host byte order ["<<BYTE_ORDER<<"], defaulting to Little Endian");
     }
+
+    // Determine BulkIO output byte order
+    if (output_bulkio_byte_order == "little_endian") {
+        BULKIO_BYTE_ORDER = LITTLE_ENDIAN;
+    } else if (output_bulkio_byte_order == "big_endian") {
+        BULKIO_BYTE_ORDER = BIG_ENDIAN;
+    } else { // host_order
+        BULKIO_BYTE_ORDER = BYTE_ORDER;
+    }
 }
 
 void FileReader_i::initialize() throw (CF::LifeCycle::InitializeError, CORBA::SystemException)
@@ -272,6 +281,25 @@ void FileReader_i::default_sriChanged(const default_sri_struct *oldValue, const 
 void FileReader_i::default_sri_keywordsChanged(const std::vector<sri_keywords_struct_struct> *oldValue, const std::vector<sri_keywords_struct_struct> *newValue) {
     exclusive_lock lock(service_thread_lock);
     reconstruct_property_sri(current_sample_rate);
+}
+
+void FileReader_i::output_bulkio_byte_orderChanged(std::string oldValue, std::string newValue){
+    exclusive_lock lock(service_thread_lock);
+    if (oldValue != newValue) {
+        if (newValue == "little_endian") {
+            LOG_DEBUG(FileReader_i,"input_bulkio_byte_order changed from "<<oldValue<<" to "<<newValue);
+            BULKIO_BYTE_ORDER = LITTLE_ENDIAN;
+        } else if (newValue ==  "big_endian") {
+            LOG_DEBUG(FileReader_i,"input_bulkio_byte_order changed from "<<oldValue<<" to "<<newValue);
+            BULKIO_BYTE_ORDER = BIG_ENDIAN;
+        } else if (newValue == "host_order") {
+            LOG_DEBUG(FileReader_i,"input_bulkio_byte_order changed from "<<oldValue<<" to "<<newValue);
+            BULKIO_BYTE_ORDER = BYTE_ORDER;
+        } else {
+            LOG_ERROR(FileReader_i,"Configured with invalid output_bulkio_byte_order value: "<<newValue<<"; Reverting back to previous value: "<<oldValue);
+            output_bulkio_byte_order = oldValue;
+        }
+    }
 }
 
 void FileReader_i::restart_read_ahead_caching() {
@@ -706,7 +734,14 @@ void FileReader_i::read_ahead_thread() {
                     // Convert to BULKIO Data format
 
                     // Byte swap
-                    if (dd_ptr->endian == SUPPORTED_DATA_TYPE::_byte_swap_) {
+                    //   - DO NOT: if single-byte data type
+                    //   - DO:     if explicitly set to byte swap (Not used in FileReader, but here for completeness)
+                    //   - DO:     if File IS (true) Big Endian and BulkIO output IS NOT (false) Big Endian (true^false=true)
+                    //   - DO      if File IS NOT (false) Big Endian and BulkIO output IS (true) Big Endian (false^true=true)
+                    if (dd_ptr->endian == SUPPORTED_DATA_TYPE::_keep_endianess_) {
+                    	// Do nothing -- this is for single-byte data types where byte swapping is N/A
+                    } else if (dd_ptr->endian == SUPPORTED_DATA_TYPE::_byte_swap_ ||
+                    	      ((dd_ptr->endian == SUPPORTED_DATA_TYPE::_big_endian_) ^ (BULKIO_BYTE_ORDER == BIG_ENDIAN))) {
                         pkt->dataBuffer.resize(2.0 * std::ceil(float(pkt->dataBuffer.size())/2.0));
                         if (dd_ptr->bytes_per_element == sizeof (uint16_t)) {
                             std::vector<uint16_t> *svp = (std::vector<uint16_t> *) & pkt->dataBuffer;
@@ -729,7 +764,7 @@ void FileReader_i::read_ahead_thread() {
         shared_ptr_file_packet pkt = available_file_packets.pop();
         pkt->NO_MORE_DATA = true;
         used_file_packets.push(pkt);
-    } catch (boost::thread_interrupted){
+    } catch (boost::thread_interrupted&){
         if (!opened_file.empty())
             filesystem.close_file(opened_file);
     };
@@ -743,32 +778,40 @@ bool FileReader_i::process_bluefile_fixedheader(shared_ptr_file_packet current_p
     }
 
     std::string format_code = hcb->getFormatCode();
-    //mode
+    // mode
     SUPPORTED_DATA_TYPE::mode_enum mode = SUPPORTED_DATA_TYPE::_scalar_;
     if (format_code[0] == 'C')
         mode = SUPPORTED_DATA_TYPE::_complex_;
-    //format
-    SUPPORTED_DATA_TYPE::data_type_enum dte = SUPPORTED_DATA_TYPE::_16t_;
-    if (format_code[1] == 'B' || format_code[1] == 'A')
-        dte = SUPPORTED_DATA_TYPE::_8t_;
-    else if (format_code[1] == 'I')
-        dte = SUPPORTED_DATA_TYPE::_16t_;
-    else if (format_code[1] == 'U')
-        dte = SUPPORTED_DATA_TYPE::_16o_;
-    else if (format_code[1] == 'L')
-        dte = SUPPORTED_DATA_TYPE::_32t_;
-    else if (format_code[1] == 'V')
-        dte = SUPPORTED_DATA_TYPE::_32o_;
-    else if (format_code[1] == 'X')
-        dte = SUPPORTED_DATA_TYPE::_64t_;
-    else if (format_code[1] == 'F')
-        dte = SUPPORTED_DATA_TYPE::_32f_;
-    else if (format_code[1] == 'D')
-        dte = SUPPORTED_DATA_TYPE::_64f_;
-    SUPPORTED_DATA_TYPE::endian_enum endian = SUPPORTED_DATA_TYPE::_keep_endianess_;
 
-    if (hcb->getDataEndiance() == blue::EEEI)
-        endian = SUPPORTED_DATA_TYPE::_byte_swap_;
+    // byte order of input file
+    // Assume little endian, unless:
+    //  - File IS (true) same as host and host IS NOT (false) little endian (true^false=true)
+    //  - File IS NOT (false) same as host and host IS (true) little endian (false^true=true)
+    SUPPORTED_DATA_TYPE::endian_enum endian = SUPPORTED_DATA_TYPE::_little_endian_;
+    if ((hcb->getDataEndiance() == blue::IEEE) ^ (BYTE_ORDER == LITTLE_ENDIAN))
+        endian = SUPPORTED_DATA_TYPE::_big_endian_;
+
+    // format
+    SUPPORTED_DATA_TYPE::data_type_enum dte = SUPPORTED_DATA_TYPE::_16t_;
+    if (format_code[1] == 'B' || format_code[1] == 'A') {
+        dte = SUPPORTED_DATA_TYPE::_8t_;
+        // byte-order N/A to single-byte types
+        endian = SUPPORTED_DATA_TYPE::_keep_endianess_;
+    } else if (format_code[1] == 'I') {
+        dte = SUPPORTED_DATA_TYPE::_16t_;
+    } else if (format_code[1] == 'U') {
+        dte = SUPPORTED_DATA_TYPE::_16o_;
+    } else if (format_code[1] == 'L') {
+        dte = SUPPORTED_DATA_TYPE::_32t_;
+    } else if (format_code[1] == 'V') {
+        dte = SUPPORTED_DATA_TYPE::_32o_;
+    } else if (format_code[1] == 'X') {
+        dte = SUPPORTED_DATA_TYPE::_64t_;
+    } else if (format_code[1] == 'F') {
+        dte = SUPPORTED_DATA_TYPE::_32f_;
+    } else if (format_code[1] == 'D') {
+        dte = SUPPORTED_DATA_TYPE::_64f_;
+    }
 
     current_packet->data_format = dth.get_identifier(dte, mode, endian);
 
@@ -970,7 +1013,7 @@ bool FileReader_i::process_bluefile_extendedheader(shared_ptr_file_packet curren
 
 bool FileReader_i::process_wav_header(shared_ptr_file_packet current_packet, WAV_HELPERS::wav_file_header *wfh) {
     memcpy(wfh, & current_packet->dataBuffer[0], sizeof (WAV_HELPERS::wav_file_header));
-    if (!WAV_HELPERS::is_waveFileHeader_valid(*wfh))
+    if (!WAV_HELPERS::is_waveFileHeader_valid(*wfh)) // Note: only accepts little-endian RIFF WAVE files
         return false;
 
     // Extract Data Type
@@ -980,7 +1023,7 @@ bool FileReader_i::process_wav_header(shared_ptr_file_packet current_packet, WAV
     else if (wfh->format.bits_per_sample == 8 && wfh->format.format_type == 7)
         current_packet->data_format = SUPPORTED_DATA_TYPE::MULAW;
     else if (wfh->format.bits_per_sample == 16)
-        current_packet->data_format = SUPPORTED_DATA_TYPE::SHORT;
+        current_packet->data_format = SUPPORTED_DATA_TYPE::SHORT_LITTLE_ENDIAN; // Default byte ordering for WAVE files is little endian
 
 
     //Extract Format
@@ -1147,7 +1190,7 @@ int FileReader_i::serviceFunction() {
     // No need to perform serviceFunction duties if no data is available or the playing state is not selected
     if (playback_state != "PLAY" || used_file_packets.getUsage() <= 0) {
         st_lock.unlock();
-        usleep(std::min(throttle_usleep / 4, size_t(250e3))); // instead of returning NOOP, i want to control the amount of sleep
+        usleep(std::max(size_t(10),std::min(throttle_usleep / 4, size_t(250e3)))); // instead of returning NOOP, i want to control the amount of sleep
         return NORMAL;
     }
 
@@ -1382,7 +1425,7 @@ int FileReader_i::serviceFunction() {
         // Throttling management
         if (throttle_usleep > 0 && throttle_rate_Bps > 0 && sent_bytes > 0) {
             // Current sleep
-            usleep(std::min(size_t(advanced_properties.max_sleep_time*1e6), throttle_usleep));;
+            usleep(std::min(size_t(advanced_properties.max_sleep_time*1e6), throttle_usleep));
 
             // Update sleep amount
             double timeDiff_from_last_pkt = get_timestamp_difference(throttle_tstamp, get_current_timestamp());

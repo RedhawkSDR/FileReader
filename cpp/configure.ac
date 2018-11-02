@@ -38,7 +38,7 @@ fi
 # Dependencies
 PKG_CHECK_MODULES([PROJECTDEPS], [ossie >= 2.0 omniORB4 >= 4.1.0])
 PKG_CHECK_MODULES([INTERFACEDEPS], [bulkio >= 2.0])
-RH_SOFTPKG_CXX([/deps/rh/RedhawkDevUtils/RedhawkDevUtils.spd.xml],[cpp],[4.0])
+RH_SOFTPKG_CXX([/deps/rh/RedhawkDevUtils/RedhawkDevUtils.spd.xml],[cpp],[5.0])
 RH_SOFTPKG_CXX([/deps/rh/blueFileLib/blueFileLib.spd.xml],[cpp],[2.1])
 OSSIE_ENABLE_LOG4CXX
 AX_BOOST_BASE([1.41])

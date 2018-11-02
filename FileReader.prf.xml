@@ -197,7 +197,7 @@ If the byte order of the input file is different than that of the desired output
       <enumeration label="SCALAR SHORT Little Endian(16tr)" value="SHORT_LITTLE_ENDIAN"/>
       <enumeration label="SCALAR SHORT Big Endian (16t)" value="SHORT_BIG_ENDIAN"/>
       <enumeration label="SCALAR ULONG Little Endian(32or)" value="ULONG_LITTLE_ENDIAN"/>
-      <enumeration label="SCALAR ULONG Big Endian (32o)" value="ULONG__BIG_ENDIAN"/>
+      <enumeration label="SCALAR ULONG Big Endian (32o)" value="ULONG_BIG_ENDIAN"/>
       <enumeration label="SCALAR LONG Little Endian (32tr)" value="LONG_LITTLE_ENDIAN"/>
       <enumeration label="SCALAR LONG Big Endian (32t)" value="LONG_BIG_ENDIAN"/>
       <enumeration label="SCALAR FLOAT Little Endian(32fr)" value="FLOAT_LITTLE_ENDIAN"/>
@@ -210,8 +210,8 @@ If the byte order of the input file is different than that of the desired output
       <enumeration label="COMPLEX USHORT Big Endian (16o)" value="COMPLEX_USHORT_BIG_ENDIAN"/>
       <enumeration label="COMPLEX SHORT Little Endian (16tr)" value="COMPLEX_SHORT_LITTLE_ENDIAN"/>
       <enumeration label="COMPLEX SHORT Big Endian (16t)" value="COMPLEX_SHORT_BIG_ENDIAN"/>
-      <enumeration label="COMPLEX LONG Little Endian (32or)" value="COMPLEX_ULONG_LITTLE_ENDIAN"/>
-      <enumeration label="COMPLEX LONG Big Endian (32o)" value="COMPLEX_ULONG_BIG_ENDIAN"/>
+      <enumeration label="COMPLEX ULONG Little Endian (32or)" value="COMPLEX_ULONG_LITTLE_ENDIAN"/>
+      <enumeration label="COMPLEX ULONG Big Endian (32o)" value="COMPLEX_ULONG_BIG_ENDIAN"/>
       <enumeration label="COMPLEX LONG Little Endian (32tr)" value="COMPLEX_LONG_LITTLE_ENDIAN"/>
       <enumeration label="COMPLEX LONG Big Endian (32t)" value="COMPLEX_LONG_BIG_ENDIAN"/>
       <enumeration label="COMPLEX FLOAT Little Endian (32fr)" value="COMPLEX_FLOAT_LITTLE_ENDIAN"/>

@@ -119,6 +119,8 @@ namespace WAV_HELPERS {
     };
 
     inline bool is_waveFileHeader_valid(struct wav_file_header & wfh) {
+    	// Default WAVE file byte ordering is little endian
+    	// WAVE files with big endian byte ordering will start with RIFX instead of RIFF
         if (!strncmp(wfh.riff.chunk_name, "RIFF", 4) && !strncmp(wfh.format.chunk_name, "fmt ", 4) && !strncmp(wfh.data.chunk_name, "data ", 4)) {
             return true;
         }
@@ -224,6 +226,7 @@ private:
     void default_timestampChanged(const default_timestamp_struct *oldValue, const default_timestamp_struct *newValue);
     void default_sriChanged(const default_sri_struct *oldValue, const default_sri_struct *newValue);
     void default_sri_keywordsChanged(const std::vector<sri_keywords_struct_struct> *oldValue, const std::vector<sri_keywords_struct_struct> *newValue);
+    void output_bulkio_byte_orderChanged(std::string oldValue, std::string newValue);
 
     // Property change listener helper methods
     void restart_read_ahead_caching();
@@ -271,6 +274,8 @@ private:
     std::queue<size_t> packetSizeQueue;
     //Metadata parser
     MetaDataParser *MetaDataParser_i;
+
+    long BULKIO_BYTE_ORDER;
 
 
     //////////////////////

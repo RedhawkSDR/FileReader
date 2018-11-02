@@ -41,8 +41,8 @@ BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires:  redhawk-devel >= 2.0
 Requires:       redhawk >= 2.0
 
-BuildRequires:  rh.RedhawkDevUtils-devel >= 4.0
-Requires:       rh.RedhawkDevUtils >= 4.0
+BuildRequires:  rh.RedhawkDevUtils-devel >= 5.0
+Requires:       rh.RedhawkDevUtils >= 5.0
 BuildRequires:  rh.blueFileLib-devel >= 2.1
 Requires:       rh.blueFileLib >= 2.1
 
