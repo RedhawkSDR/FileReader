@@ -305,9 +305,19 @@ class ResourceTests(ossie.utils.testing.ScaComponentTestCase):
         print "........ PASSED\n"
     
     def testBlueShortPort(self):
+        self.blueShortPortTests()
+        
+    def testBlueShortPortLittle(self):
+        self.blueShortPortTests(outputOrder="little_endian")
+        
+    def testBlueShortPortBig(self):
+        self.blueShortPortTests(outputOrder="big_endian")
+        
+    def blueShortPortTests(self, outputOrder="host_order"):
         #######################################################################
         # Test Bluefile SHORT Functionality
-        print "\n**TESTING BLUEFILE + SHORT PORT"
+        print "\n**TESTING BLUEFILE + SHORT PORT + input(host)=%s_endian + output=%s"%(sys.byteorder,outputOrder)
+        inputEndian = sys.byteorder+'_endian'
         
         #Define test files
         dataFileIn = './bluefile.in'
@@ -326,10 +336,18 @@ class ResourceTests(ossie.utils.testing.ScaComponentTestCase):
         hdr, d = bluefile.read(dataFileIn, dict)
         data = list(d)
         keywords = hdr['ext_header']
+        
+        outputEndian = outputOrder
+        if outputEndian == "host_order":
+            outputEndian = sys.byteorder+'_endian'
+        
+        if inputEndian != outputEndian:
+            data = list(struct.unpack('<'+'h'*len(data), struct.pack('>'+'h'*len(data), *data)))
             
         #Create Components and Connections
         comp = sb.launch('../FileReader.spd.xml')
         comp.source_uri = dataFileIn
+        comp.output_bulkio_byte_order= outputOrder
         comp.file_format = 'BLUEFILE'
         
         sink = sb.DataSink()
@@ -370,9 +388,20 @@ class ResourceTests(ossie.utils.testing.ScaComponentTestCase):
         return
     
     def testBlueShortPortSwapped(self):
+        self.blueShortPortSwappedTests()
+        
+    def testBlueShortPortSwappedLittle(self):
+        self.blueShortPortSwappedTests(outputOrder="little_endian")
+        
+    def testBlueShortPortSwappedBig(self):
+        self.blueShortPortSwappedTests(outputOrder="big_endian")
+    
+    def blueShortPortSwappedTests(self, outputOrder= "host_order"):
         #######################################################################
         # Test Bluefile Swapped SHORT Functionality
-        print "\n**TESTING BLUEFILE Swapped + SHORT PORT"
+        inputOrder = 'big' if sys.byteorder=='little' else 'little'
+        print "\n**TESTING BLUEFILE Swapped + SHORT PORT + input(reversed host)=%s_endian + output=%s"%(inputOrder,outputOrder)
+        inputEndian = inputOrder+'_endian'
         
         #Define test files
         dataFileIn = './bluefile.in'
@@ -395,18 +424,32 @@ class ResourceTests(ossie.utils.testing.ScaComponentTestCase):
         #Read in Data from Test File, modify header, and rewrite
         hdr, d = bluefile.read(dataFileIn, dict)
         hdr['file_name'] = dataFileInSwap
-        hdr['head_rep'] = 'IEEE'
-        hdr['data_rep'] = 'IEEE'
+        if hdr['head_rep'] == 'EEEI':
+            hdr['head_rep'] = 'IEEE'
+        else:
+            hdr['head_rep'] = 'EEEI'
+        if hdr['data_rep'] == 'EEEI':
+            hdr['data_rep'] = 'IEEE'
+        else:
+            hdr['data_rep'] = 'EEEI'
         bluefile.write(dataFileInSwap, hdr, d)
             
         #Read in Data from Swapped Test File
         hdr, d = bluefile.read(dataFileInSwap, dict)
-        data = list(d)
         keywords = hdr['ext_header']
+        
+        outputEndian = outputOrder
+        if outputEndian == "host_order":
+            outputEndian = sys.byteorder+'_endian'
+        
+        data = list(d) # this is the data in host byte order
+        if (sys.byteorder+'_endian') != outputEndian:
+            data = list(struct.unpack('<'+'h'*len(data), struct.pack('>'+'h'*len(data), *data)))
             
         #Create Components and Connections
         comp = sb.launch('../FileReader.spd.xml')
         comp.source_uri = dataFileInSwap
+        comp.output_bulkio_byte_order= outputOrder
         comp.file_format = 'BLUEFILE'
         
         sink = sb.DataSink()
