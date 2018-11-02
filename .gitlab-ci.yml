@@ -19,7 +19,7 @@ before_script:
     - if [ -z "$CI_COMMIT_TAG" ]; then
         redhawk_version=${latest_version}
         blueFileLib_version=develop
-        RedhawkDevUtils_version=develop
+        RedhawkDevUtils_version=$CI_COMMIT_REF_SLUG
         rpm_release="0.$CI_PIPELINE_ID.rh${safe_version}";
       else
         redhawk_version=${release_version}
