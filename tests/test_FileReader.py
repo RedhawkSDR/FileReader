@@ -1270,13 +1270,32 @@ class ResourceTests(ossie.utils.testing.ScaComponentTestCase):
         
         print "........ PASSED\n"
         return
-    
+
+    def testHostByteOrderProp(self):
+        #######################################################################
+        # Test the host_byte_order property indicates correct host endianness
+        print "\n**TESTING HOST BYTE ORDER PROP VALUE"
+
+        # Create Component
+        comp = sb.launch('../FileReader.spd.xml')
+
+        # Check the host_byte_order property
+        try:
+            self.assertEqual(sys.byteorder + '_endian', comp.host_byte_order)
+        except self.failureException as e:
+            comp.releaseObject()
+            raise e
+
+        # Release the components and remove the generated files
+        comp.releaseObject()
+
+        print "........ PASSED\n"
+
     # TODO Add additional tests here
     #
     # See:
     #   ossie.utils.bulkio.bulkio_helpers,
     #   ossie.utils.bluefile.bluefile_helpers
     # for modules that will assist with testing resource with BULKIO ports
-
 if __name__ == "__main__":
     ossie.utils.testing.main("../FileReader.spd.xml") # By default tests all implementations
