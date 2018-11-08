@@ -19,7 +19,7 @@
 
 import ossie.utils.testing
 from ossie.cf import CF
-import os, sys
+import os, sys, subprocess
 from omniORB import any
 import time
 from ossie.utils import sb
@@ -1365,6 +1365,37 @@ class ResourceTests(ossie.utils.testing.ScaComponentTestCase):
             raise e
 
         # Release the components and remove the generated files
+        comp.releaseObject()
+
+        print "........ PASSED\n"
+
+    def testIdleCpuUtilization(self):
+        #######################################################################
+        # Test the CPU utilization when playback state is STOP and throttle 0
+        print "\n**TESTING IDLE CPU UTILIZATION"
+
+        # Create Component
+        comp = sb.launch('../FileReader.spd.xml')
+        comp.advanced_properties.throttle_rate = '0'
+        comp.start()
+
+        # Check the CPU utilization
+        try:
+            pid = comp._process.pid()
+            cpu_usage = 0.0
+            iterations = 8
+            for _ in xrange(iterations):
+                proc = subprocess.Popen("top -p %s -b -n 1 | grep -w FileReader | awk '{print $9}'" % pid, shell=True, stdout=subprocess.PIPE)
+                cpu_usage += float(proc.communicate()[0].strip())
+                time.sleep(0.25)
+            cpu_usage = cpu_usage / iterations
+            self.assertTrue(cpu_usage < 1.0, 'CPU Usage too high: %s is not less than 1.0'%cpu_usage)
+        except self.failureException as e:
+            comp.releaseObject()
+            raise e
+
+        # Release the components and remove the generated files
+        comp.stop()
         comp.releaseObject()
 
         print "........ PASSED\n"

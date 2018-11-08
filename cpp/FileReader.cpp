@@ -1198,9 +1198,14 @@ int FileReader_i::serviceFunction() {
     exclusive_lock st_lock(service_thread_lock);
 
     // No need to perform serviceFunction duties if no data is available or the playing state is not selected
-    if (playback_state != "PLAY" || used_file_packets.getUsage() <= 0) {
+    if (playback_state != "PLAY") {
         st_lock.unlock();
-        usleep(std::max(size_t(10),std::min(throttle_usleep / 4, size_t(250e3)))); // instead of returning NOOP, i want to control the amount of sleep
+        return NOOP;
+    }
+    if (used_file_packets.getUsage() <= 0) {
+        st_lock.unlock();
+        // instead of returning NOOP, i want to control the amount of sleep
+        usleep(std::max(size_t(10),std::min(throttle_usleep / 4, size_t(250e3))));
         return NORMAL;
     }
 
