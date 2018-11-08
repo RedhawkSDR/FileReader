@@ -1373,6 +1373,7 @@ class ResourceTests(ossie.utils.testing.ScaComponentTestCase):
         #######################################################################
         # Test the CPU utilization when playback state is STOP and throttle 0
         print "\n**TESTING IDLE CPU UTILIZATION"
+        import psutil
 
         # Create Component
         comp = sb.launch('../FileReader.spd.xml')
@@ -1382,11 +1383,11 @@ class ResourceTests(ossie.utils.testing.ScaComponentTestCase):
         # Check the CPU utilization
         try:
             pid = comp._process.pid()
+            comp_proc = psutil.Process(pid)
             cpu_usage = 0.0
             iterations = 8
             for _ in xrange(iterations):
-                proc = subprocess.Popen("top -p %s -b -n 1 | grep -w FileReader | awk '{print $9}'" % pid, shell=True, stdout=subprocess.PIPE)
-                cpu_usage += float(proc.communicate()[0].strip())
+                cpu_usage += comp_proc.cpu_percent()
                 time.sleep(0.25)
             cpu_usage = cpu_usage / iterations
             self.assertTrue(cpu_usage < 1.0, 'CPU Usage too high: %s is not less than 1.0'%cpu_usage)
