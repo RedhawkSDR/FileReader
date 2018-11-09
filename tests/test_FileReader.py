@@ -653,12 +653,28 @@ class ResourceTests(ossie.utils.testing.ScaComponentTestCase):
         
         print "........ PASSED\n"
         return
-    
-    def testwithMetadata(self):
+
+    def testMetadataContiguous(self):
+        self.metadataTests(contiguous=True)
+
+    def testMetadataNoncontiguous(self):
+        self.metadataTests(contiguous=False)
+
+    def testMetadataContiguousMultipleFiles(self):
+        self.metadataTests(contiguous=True, override_uri='./metadata_multiple_files/')
+
+    def metadataTests(self, contiguous, override_uri = None):
         
+        gap = 0.0
+        if not contiguous:
+            gap = 5.0
+
         #Define test files
-        dataFileIn = './data_onestream/testdata.out'
-        
+        if contiguous:
+            dataFileIn = './metadata_contiguous/testdata.out'
+        else:
+            dataFileIn = './metadata_noncontiguous/testdata.out'
+
         #Read in Data from Test File
         size = os.path.getsize(dataFileIn)
         with open (dataFileIn, 'rb') as dataIn:
@@ -670,8 +686,8 @@ class ResourceTests(ossie.utils.testing.ScaComponentTestCase):
         #comp.log_level(CF.LogLevels.TRACE)
 
         #comp.advanced_properties.packet_size="10000"
-        comp.advanced_properties.throttle_rate = ""
-        comp.source_uri = dataFileIn       
+        comp.advanced_properties.throttle_rate = "0"
+        comp.source_uri = override_uri or dataFileIn
         comp.file_format = 'SHORT_LITTLE_ENDIAN'
         comp.advanced_properties.use_metadata_file = True
         
@@ -692,13 +708,14 @@ class ResourceTests(ossie.utils.testing.ScaComponentTestCase):
             packetData.append(packet)
             eos = packet[2]
         
-        #Should have three packets
-        self.assertEqual(len(packetData),3)
+        #print comp.api()
+        #Should have five packets
+        self.assertEqual(len(packetData),5)
         readdata = []
         #Verify Packet 1
         self.assertEqual(len(packetData[0][0]),1000)
-        self.assertAlmostEqual(packetData[0][1].tfsec, 0.721574068069458,10)
-        self.assertAlmostEqual(packetData[0][1].twsec, 1537799012,10)
+        self.assertAlmostEqual(packetData[0][1].tfsec, 0.0,10)
+        self.assertAlmostEqual(packetData[0][1].twsec, 1541719801,10)
         self.assertEqual(packetData[0][2],False)
         self.assertEqual(packetData[0][3],"test_streamID")
         self.assertEqual(packetData[0][4].keywords[0].id, "TEST_KW2")
@@ -709,8 +726,8 @@ class ResourceTests(ossie.utils.testing.ScaComponentTestCase):
         
         #Verify Packet 2
         self.assertEqual(len(packetData[1][0]),1000)
-        self.assertAlmostEqual(packetData[1][1].tfsec, 0.721842050552368,10)
-        self.assertAlmostEqual(packetData[1][1].twsec, 1537799012,10)
+        self.assertAlmostEqual(packetData[1][1].tfsec, 0.0001,10)
+        self.assertAlmostEqual(packetData[1][1].twsec, 1541719801,10)
         self.assertEqual(packetData[1][2],False)
         self.assertEqual(packetData[1][3],"test_streamID")
         self.assertEqual(packetData[1][4].keywords[0].id, "TEST_KW2")
@@ -721,15 +738,39 @@ class ResourceTests(ossie.utils.testing.ScaComponentTestCase):
         
         #Verify Packet 3
         self.assertEqual(len(packetData[2][0]),1000)
-        self.assertAlmostEqual(packetData[2][1].tfsec, 0.721976041793823,10)
-        self.assertAlmostEqual(packetData[2][1].twsec, 1537799012,10)
-        self.assertEqual(packetData[2][2],True)
+        self.assertAlmostEqual(packetData[2][1].tfsec, 0.0002,10)
+        self.assertAlmostEqual(packetData[2][1].twsec, 1541719801,10)
+        self.assertEqual(packetData[2][2],False)
         self.assertEqual(packetData[2][3],"test_streamID")
         self.assertEqual(packetData[2][4].keywords[0].id, "TEST_KW2")
         self.assertEqual(any.from_any(packetData[2][4].keywords[0].value), "2222")
         self.assertEqual(packetData[2][4].keywords[1].id, "TEST_KW1")
         self.assertEqual(any.from_any(packetData[2][4].keywords[1].value), 1111)
         readdata+=packetData[2][0]
+        
+        #Verify Packet 4
+        self.assertEqual(len(packetData[3][0]),1500)
+        self.assertAlmostEqual(packetData[3][1].tfsec, 0.0003,10)
+        self.assertAlmostEqual(packetData[3][1].twsec, 1541719801,10)
+        self.assertEqual(packetData[3][2],False)
+        self.assertEqual(packetData[3][3],"test_streamID")
+        self.assertEqual(packetData[3][4].keywords[0].id, "TEST_KW2")
+        self.assertEqual(any.from_any(packetData[3][4].keywords[0].value), "2222")
+        self.assertEqual(packetData[3][4].keywords[1].id, "TEST_KW1")
+        self.assertEqual(any.from_any(packetData[3][4].keywords[1].value), 1111)
+        readdata+=packetData[3][0]
+        
+        #Verify Packet 5
+        self.assertEqual(len(packetData[4][0]),1500)
+        self.assertAlmostEqual(packetData[4][1].tfsec, 0.00045,10)
+        self.assertAlmostEqual(packetData[4][1].twsec, 1541719801+gap,10)
+        self.assertEqual(packetData[4][2],True)
+        self.assertEqual(packetData[4][3],"test_streamID")
+        self.assertEqual(packetData[4][4].keywords[0].id, "TEST_KW2")
+        self.assertEqual(any.from_any(packetData[4][4].keywords[0].value), "2222")
+        self.assertEqual(packetData[4][4].keywords[1].id, "TEST_KW5")
+        self.assertEqual(any.from_any(packetData[4][4].keywords[1].value), 5555)
+        readdata+=packetData[4][0]
         
         self.assertEqual(data, readdata)
 
@@ -742,7 +783,7 @@ class ResourceTests(ossie.utils.testing.ScaComponentTestCase):
     def testwithMetadataTimeFilteringStart(self):
         
         #Define test files
-        dataFileIn = './data_onestream/testdata.out'
+        dataFileIn = './metadata_multiple_files/testdata.out'
         
         #Read in Data from Test File
         size = os.path.getsize(dataFileIn)
@@ -786,8 +827,8 @@ class ResourceTests(ossie.utils.testing.ScaComponentTestCase):
         readdata = []
         #Verify Packet 1
         self.assertEqual(len(packetData[0][0]),1000)
-        self.assertAlmostEqual(packetData[0][1].tfsec, 0.721842050552368,10)
-        self.assertAlmostEqual(packetData[0][1].twsec, 1537799012,10)
+        self.assertAlmostEqual(packetData[0][1].tfsec, 0.0001,10)
+        self.assertAlmostEqual(packetData[0][1].twsec, 1541719801,10)
         self.assertEqual(packetData[0][2],False)
         self.assertEqual(packetData[0][3],"test_streamID")
         self.assertEqual(packetData[0][4].keywords[0].id, "TEST_KW2")
@@ -798,8 +839,8 @@ class ResourceTests(ossie.utils.testing.ScaComponentTestCase):
         
         #Verify Packet 2
         self.assertEqual(len(packetData[1][0]),1000)
-        self.assertAlmostEqual(packetData[1][1].tfsec, 0.721976041793823,10)
-        self.assertAlmostEqual(packetData[1][1].twsec, 1537799012,10)
+        self.assertAlmostEqual(packetData[1][1].tfsec, 0.0002,10)
+        self.assertAlmostEqual(packetData[1][1].twsec, 1541719801,10)
         self.assertEqual(packetData[1][2],True)
         self.assertEqual(packetData[1][3],"test_streamID")
         self.assertEqual(packetData[1][4].keywords[0].id, "TEST_KW2")
@@ -820,7 +861,7 @@ class ResourceTests(ossie.utils.testing.ScaComponentTestCase):
     def testwithMetadataTimeFilteringEnd(self):
         
         #Define test files
-        dataFileIn = './data_onestream/testdata.out'
+        dataFileIn = './metadata_multiple_files/testdata.out'
         
         #Read in Data from Test File
         size = os.path.getsize(dataFileIn)
@@ -864,8 +905,8 @@ class ResourceTests(ossie.utils.testing.ScaComponentTestCase):
         readdata = []
         #Verify Packet 1
         self.assertEqual(len(packetData[0][0]),1000)
-        self.assertAlmostEqual(packetData[0][1].tfsec, 0.721574068069458,10)
-        self.assertAlmostEqual(packetData[0][1].twsec, 1537799012,10)
+        self.assertAlmostEqual(packetData[0][1].tfsec, 0.0,10)
+        self.assertAlmostEqual(packetData[0][1].twsec, 1541719801,10)
         self.assertEqual(packetData[0][2],False)
         self.assertEqual(packetData[0][3],"test_streamID")
         self.assertEqual(packetData[0][4].keywords[0].id, "TEST_KW2")
@@ -876,8 +917,8 @@ class ResourceTests(ossie.utils.testing.ScaComponentTestCase):
         
         #Verify Packet 2
         self.assertEqual(len(packetData[1][0]),1000)
-        self.assertAlmostEqual(packetData[1][1].tfsec, 0.721842050552368,10)
-        self.assertAlmostEqual(packetData[1][1].twsec, 1537799012,10)
+        self.assertAlmostEqual(packetData[1][1].tfsec, 0.0001,10)
+        self.assertAlmostEqual(packetData[1][1].twsec, 1541719801,10)
         self.assertEqual(packetData[1][2],False)
         self.assertEqual(packetData[1][3],"test_streamID")
         self.assertEqual(packetData[1][4].keywords[0].id, "TEST_KW2")
@@ -903,7 +944,7 @@ class ResourceTests(ossie.utils.testing.ScaComponentTestCase):
     def testwithMetadataMultipleStreams(self):
         
         #Define test files
-        dataFileIn = './data_onestream/'
+        dataFileIn = './metadata_twostreams/'
         
         #Read in Data from Test File
         #size = os.path.getsize(dataFileIn)
