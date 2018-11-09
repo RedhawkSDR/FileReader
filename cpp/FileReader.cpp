@@ -531,6 +531,7 @@ bool FileReader_i::populate_file_listing(const std::string& source) {
         new_fs.error_msg.clear();
         file_status.push_back(new_fs);
     }
+    sort(file_status.begin(),file_status.end());
     return !fl.empty();
 }
 
@@ -1226,7 +1227,7 @@ int FileReader_i::serviceFunction() {
     }
 
     // Grab Metadata
-    bool eos = pkt->last_packet;
+    bool eos = false; //pkt->last_packet;
     bulkio::InLongPort::dataTransfer *metadataPkt = 0;
     size_t metaDataPacketSize=0;
     if (advanced_properties.use_metadata_file) {

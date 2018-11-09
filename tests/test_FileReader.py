@@ -708,7 +708,10 @@ class ResourceTests(ossie.utils.testing.ScaComponentTestCase):
             packetData.append(packet)
             eos = packet[2]
         
-        #print comp.api()
+        #for pkt in packetData:
+        #    print pkt[1:-3]
+        #for fstat in comp.file_status:
+        #    print(fstat['DCE:4baa9718-1f21-4f46-865c-aec82b00df91'])
         #Should have five packets
         self.assertEqual(len(packetData),5)
         readdata = []
@@ -822,8 +825,17 @@ class ResourceTests(ossie.utils.testing.ScaComponentTestCase):
             packetData.append(packet)
             eos = packet[2]
         
-        #Should have two packets
-        self.assertEqual(len(packetData),2)
+        # Should have two packets with data
+        # Last packet will have EOS==True
+        num_pkts = 0
+        for pkt in packetData:
+            #print len(pkt[0]), pkt[1:-3]
+            if len(pkt[0]) > 0:
+                num_pkts+=1
+        self.assertEqual(num_pkts,2)
+        if num_pkts < len(packetData):
+            self.assertEqual(len(packetData),3)
+        
         readdata = []
         #Verify Packet 1
         self.assertEqual(len(packetData[0][0]),1000)
@@ -841,13 +853,22 @@ class ResourceTests(ossie.utils.testing.ScaComponentTestCase):
         self.assertEqual(len(packetData[1][0]),1000)
         self.assertAlmostEqual(packetData[1][1].tfsec, 0.0002,10)
         self.assertAlmostEqual(packetData[1][1].twsec, 1541719801,10)
-        self.assertEqual(packetData[1][2],True)
+        if num_pkts < len(packetData):
+            self.assertEqual(packetData[1][2],False)
+        else:
+            self.assertEqual(packetData[1][2],True)
         self.assertEqual(packetData[1][3],"test_streamID")
         self.assertEqual(packetData[1][4].keywords[0].id, "TEST_KW2")
         self.assertEqual(any.from_any(packetData[1][4].keywords[0].value), "2222")
         self.assertEqual(packetData[1][4].keywords[1].id, "TEST_KW1")
         self.assertEqual(any.from_any(packetData[1][4].keywords[1].value), 1111)
         readdata+=packetData[1][0]
+        
+        if num_pkts < len(packetData):
+            #Verify Packet 3 - empty EOS packet
+            self.assertEqual(len(packetData[2][0]),0)
+            self.assertEqual(packetData[2][2],True)
+            self.assertEqual(packetData[2][3],"test_streamID")
         
         #Verify received Data
         self.assertEqual(data[1000:], readdata)
@@ -900,8 +921,17 @@ class ResourceTests(ossie.utils.testing.ScaComponentTestCase):
             packetData.append(packet)
             eos = packet[2]
         
-        #Should have two packets
-        self.assertEqual(len(packetData),3)
+        # Should have two packets with data
+        # Last packet will have EOS==True
+        num_pkts = 0
+        for pkt in packetData:
+            #print len(pkt[0]), pkt[1:-3]
+            if len(pkt[0]) > 0:
+                num_pkts+=1
+        self.assertEqual(num_pkts,2)
+        if num_pkts < len(packetData):
+            self.assertEqual(len(packetData),3)
+        
         readdata = []
         #Verify Packet 1
         self.assertEqual(len(packetData[0][0]),1000)
@@ -919,7 +949,10 @@ class ResourceTests(ossie.utils.testing.ScaComponentTestCase):
         self.assertEqual(len(packetData[1][0]),1000)
         self.assertAlmostEqual(packetData[1][1].tfsec, 0.0001,10)
         self.assertAlmostEqual(packetData[1][1].twsec, 1541719801,10)
-        self.assertEqual(packetData[1][2],False)
+        if num_pkts < len(packetData):
+            self.assertEqual(packetData[1][2],False)
+        else:
+            self.assertEqual(packetData[1][2],True)
         self.assertEqual(packetData[1][3],"test_streamID")
         self.assertEqual(packetData[1][4].keywords[0].id, "TEST_KW2")
         self.assertEqual(any.from_any(packetData[1][4].keywords[0].value), "2222")
@@ -927,10 +960,11 @@ class ResourceTests(ossie.utils.testing.ScaComponentTestCase):
         self.assertEqual(any.from_any(packetData[1][4].keywords[1].value), 1111)
         readdata+=packetData[1][0]
         
-        #Verify Packet 3 - Empty packet with eos
-        self.assertEqual(len(packetData[2][0]),0)
-        self.assertEqual(packetData[2][2],True)
-        self.assertEqual(packetData[2][3],"test_streamID")
+        if num_pkts < len(packetData):
+            #Verify Packet 3 - empty EOS packet
+            self.assertEqual(len(packetData[2][0]),0)
+            self.assertEqual(packetData[2][2],True)
+            self.assertEqual(packetData[2][3],"test_streamID")
         
         #Verify received Data
         self.assertEqual(data[:2000], readdata)

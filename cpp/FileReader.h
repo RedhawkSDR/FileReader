@@ -194,6 +194,15 @@ struct loop_info{
     BULKIO::PrecisionUTCTime tstamp;
 };
 
+inline bool operator> (const file_status_struct_struct& s1, const file_status_struct_struct& s2) {
+    if ( s1.file_basename > s2.file_basename) return true;
+    return false;
+}
+inline bool operator< (const file_status_struct_struct& s1, const file_status_struct_struct& s2) {
+    if ( s1.file_basename < s2.file_basename) return true;
+    return false;
+}
+
 class FileReader_i : public FileReader_base {
     ENABLE_LOGGING
 
