@@ -1226,8 +1226,10 @@ int FileReader_i::serviceFunction() {
         return NOOP;
     }
 
+    // Send EOS at the end of each file when not reading metadata files
+    bool eos = pkt->last_packet;
+
     // Grab Metadata
-    bool eos = false; //pkt->last_packet;
     bulkio::InLongPort::dataTransfer *metadataPkt = 0;
     size_t metaDataPacketSize=0;
     if (advanced_properties.use_metadata_file) {
@@ -1249,12 +1251,13 @@ int FileReader_i::serviceFunction() {
             return NORMAL;
         }
 
-        eos = eos || metadataPkt->EOS;
+        // Don't send EOS for pkt->last_packet (i.e. end of a file) when reading metadata files
+        // If this is the last packet of the last file, EOS will be sent for pkt->NO_MORE_DATA
+        eos = metadataPkt->EOS;
         sriChanged = metadataPkt->sriChanged;
         data_tstamp = metadataPkt->T;
         //current_sri = metadataPkt->SRI; // done below to keep sri code together
     }
-
 
     // New stream: every time a file has changed or when the state goes to PLAY
     if (pkt->first_packet) {
@@ -1270,6 +1273,7 @@ int FileReader_i::serviceFunction() {
 
         // If we are using metadata file mode then the timecode and sri are provided and will be used
         if (!advanced_properties.use_metadata_file) {
+
             // Need to reconstruct here...
             //    constructed sri depends on current_data_format and
             //    will not reflect current_data_format unless called
@@ -1391,7 +1395,10 @@ int FileReader_i::serviceFunction() {
                     // Must prune metadata as well
                     newMPkt = metadataQueue->getPacket(bulkio::Const::NON_BLOCKING);
                     if (newMPkt) {
-                        eos = newMPkt->EOS || newPkt->last_packet;
+                        // If we're here, eos is false. Set true if metadata indicates EOS
+                        // Don't send EOS for pkt->last_packet (i.e. end of a file) when reading metadata file
+                        // If this is the last packet of the last file, EOS will be sent for pkt->NO_MORE_DATA
+                        eos = newMPkt->EOS;
                         available_file_packets.push(newPkt);
                         delete newMPkt;
                         newMPkt = 0;
@@ -1403,6 +1410,7 @@ int FileReader_i::serviceFunction() {
                         break;
                     }
                 } else {
+                    // Not reading metadata file, so send EOS at end of file
                     eos = newPkt->last_packet;
                     available_file_packets.push(newPkt);
                     if (eos)
