@@ -1254,7 +1254,8 @@ int FileReader_i::serviceFunction() {
         // Don't send EOS for pkt->last_packet (i.e. end of a file) when reading metadata files
         // If this is the last packet of the last file, EOS will be sent for pkt->NO_MORE_DATA
         eos = metadataPkt->EOS;
-        sriChanged = metadataPkt->sriChanged;
+        // Preserve a previous SRI change that may not have been handled yet
+        sriChanged = sriChanged || metadataPkt->sriChanged;
         data_tstamp = metadataPkt->T;
         //current_sri = metadataPkt->SRI; // done below to keep sri code together
     }
@@ -1399,6 +1400,8 @@ int FileReader_i::serviceFunction() {
                         // Don't send EOS for pkt->last_packet (i.e. end of a file) when reading metadata file
                         // If this is the last packet of the last file, EOS will be sent for pkt->NO_MORE_DATA
                         eos = newMPkt->EOS;
+                        // Preserve a previous SRI change that may not have been handled yet
+                        sriChanged = sriChanged || newMPkt->sriChanged;
                         available_file_packets.push(newPkt);
                         delete newMPkt;
                         newMPkt = 0;
