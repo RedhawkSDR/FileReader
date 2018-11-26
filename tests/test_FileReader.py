@@ -664,15 +664,13 @@ class ResourceTests(ossie.utils.testing.ScaComponentTestCase):
         self.metadataTests(contiguous=True, override_uri='./metadata_multiple_files/')
 
     def metadataTests(self, contiguous, override_uri = None):
-        
-        gap = 0.0
-        if not contiguous:
-            gap = 5.0
 
         #Define test files
+        gap = 0.0
         if contiguous:
             dataFileIn = './metadata_contiguous/testdata.out'
         else:
+            gap = 5.0
             dataFileIn = './metadata_noncontiguous/testdata.out'
 
         #Read in Data from Test File
@@ -713,67 +711,98 @@ class ResourceTests(ossie.utils.testing.ScaComponentTestCase):
         #for fstat in comp.file_status:
         #    print(fstat['DCE:4baa9718-1f21-4f46-865c-aec82b00df91'])
         #Should have five packets
-        self.assertEqual(len(packetData),5)
+        self.assertEqual(len(packetData),7)
         readdata = []
+        pkt_idx = 0
         #Verify Packet 1
-        self.assertEqual(len(packetData[0][0]),1000)
-        self.assertAlmostEqual(packetData[0][1].tfsec, 0.0,10)
-        self.assertAlmostEqual(packetData[0][1].twsec, 1541719801,10)
-        self.assertEqual(packetData[0][2],False)
-        self.assertEqual(packetData[0][3],"test_streamID")
-        self.assertEqual(packetData[0][4].keywords[0].id, "TEST_KW2")
-        self.assertEqual(any.from_any(packetData[0][4].keywords[0].value), "2222")
-        self.assertEqual(packetData[0][4].keywords[1].id, "TEST_KW1")
-        self.assertEqual(any.from_any(packetData[0][4].keywords[1].value), 1111)
-        readdata+=packetData[0][0]
+        self.assertEqual(len(packetData[pkt_idx][0]),1000)
+        self.assertAlmostEqual(packetData[pkt_idx][1].tfsec, 0.0,10)
+        self.assertAlmostEqual(packetData[pkt_idx][1].twsec, 1541719801,10)
+        self.assertEqual(packetData[pkt_idx][2],False)
+        self.assertEqual(packetData[pkt_idx][3],"test_streamID")
+        self.assertEqual(packetData[pkt_idx][4].keywords[0].id, "TEST_KW2")
+        self.assertEqual(any.from_any(packetData[pkt_idx][4].keywords[0].value), "2222")
+        self.assertEqual(packetData[pkt_idx][4].keywords[1].id, "TEST_KW1")
+        self.assertEqual(any.from_any(packetData[pkt_idx][4].keywords[1].value), 1111)
+        readdata+=packetData[pkt_idx][0]
         
         #Verify Packet 2
-        self.assertEqual(len(packetData[1][0]),1000)
-        self.assertAlmostEqual(packetData[1][1].tfsec, 0.0001,10)
-        self.assertAlmostEqual(packetData[1][1].twsec, 1541719801,10)
-        self.assertEqual(packetData[1][2],False)
-        self.assertEqual(packetData[1][3],"test_streamID")
-        self.assertEqual(packetData[1][4].keywords[0].id, "TEST_KW2")
-        self.assertEqual(any.from_any(packetData[1][4].keywords[0].value), "2222")
-        self.assertEqual(packetData[1][4].keywords[1].id, "TEST_KW1")
-        self.assertEqual(any.from_any(packetData[1][4].keywords[1].value), 1111)
-        readdata+=packetData[1][0]
+        pkt_idx = 1
+        self.assertEqual(len(packetData[pkt_idx][0]),1000)
+        self.assertAlmostEqual(packetData[pkt_idx][1].tfsec, 0.0001,10)
+        self.assertAlmostEqual(packetData[pkt_idx][1].twsec, 1541719801,10)
+        self.assertEqual(packetData[pkt_idx][2],False)
+        self.assertEqual(packetData[pkt_idx][3],"test_streamID")
+        self.assertEqual(packetData[pkt_idx][4].keywords[0].id, "TEST_KW2")
+        self.assertEqual(any.from_any(packetData[pkt_idx][4].keywords[0].value), "2222")
+        self.assertEqual(packetData[pkt_idx][4].keywords[1].id, "TEST_KW1")
+        self.assertEqual(any.from_any(packetData[pkt_idx][4].keywords[1].value), 1111)
+        readdata+=packetData[pkt_idx][0]
         
         #Verify Packet 3
-        self.assertEqual(len(packetData[2][0]),1000)
-        self.assertAlmostEqual(packetData[2][1].tfsec, 0.0002,10)
-        self.assertAlmostEqual(packetData[2][1].twsec, 1541719801,10)
-        self.assertEqual(packetData[2][2],False)
-        self.assertEqual(packetData[2][3],"test_streamID")
-        self.assertEqual(packetData[2][4].keywords[0].id, "TEST_KW2")
-        self.assertEqual(any.from_any(packetData[2][4].keywords[0].value), "2222")
-        self.assertEqual(packetData[2][4].keywords[1].id, "TEST_KW1")
-        self.assertEqual(any.from_any(packetData[2][4].keywords[1].value), 1111)
-        readdata+=packetData[2][0]
+        pkt_idx = 2
+        self.assertEqual(len(packetData[pkt_idx][0]),1000)
+        self.assertAlmostEqual(packetData[pkt_idx][1].tfsec, 0.0002,10)
+        self.assertAlmostEqual(packetData[pkt_idx][1].twsec, 1541719801,10)
+        self.assertEqual(packetData[pkt_idx][2],False)
+        self.assertEqual(packetData[pkt_idx][3],"test_streamID")
+        self.assertEqual(packetData[pkt_idx][4].keywords[0].id, "TEST_KW2")
+        self.assertEqual(any.from_any(packetData[pkt_idx][4].keywords[0].value), "2222")
+        self.assertEqual(packetData[pkt_idx][4].keywords[1].id, "TEST_KW1")
+        self.assertEqual(any.from_any(packetData[pkt_idx][4].keywords[1].value), 1111)
+        readdata+=packetData[pkt_idx][0]
         
         #Verify Packet 4
-        self.assertEqual(len(packetData[3][0]),1500)
-        self.assertAlmostEqual(packetData[3][1].tfsec, 0.0003,10)
-        self.assertAlmostEqual(packetData[3][1].twsec, 1541719801,10)
-        self.assertEqual(packetData[3][2],False)
-        self.assertEqual(packetData[3][3],"test_streamID")
-        self.assertEqual(packetData[3][4].keywords[0].id, "TEST_KW2")
-        self.assertEqual(any.from_any(packetData[3][4].keywords[0].value), "2222")
-        self.assertEqual(packetData[3][4].keywords[1].id, "TEST_KW1")
-        self.assertEqual(any.from_any(packetData[3][4].keywords[1].value), 1111)
-        readdata+=packetData[3][0]
+        pkt_idx = 3
+        self.assertEqual(len(packetData[pkt_idx][0]),750)
+        self.assertAlmostEqual(packetData[pkt_idx][1].tfsec, 0.0003,10)
+        self.assertAlmostEqual(packetData[pkt_idx][1].twsec, 1541719801,10)
+        self.assertEqual(packetData[pkt_idx][2],False)
+        self.assertEqual(packetData[pkt_idx][3],"test_streamID")
+        self.assertEqual(packetData[pkt_idx][4].keywords[0].id, "TEST_KW2")
+        self.assertEqual(any.from_any(packetData[pkt_idx][4].keywords[0].value), "2222")
+        self.assertEqual(packetData[pkt_idx][4].keywords[1].id, "TEST_KW1")
+        self.assertEqual(any.from_any(packetData[pkt_idx][4].keywords[1].value), 1111)
+        readdata+=packetData[pkt_idx][0]
         
         #Verify Packet 5
-        self.assertEqual(len(packetData[4][0]),1500)
-        self.assertAlmostEqual(packetData[4][1].tfsec, 0.00045,10)
-        self.assertAlmostEqual(packetData[4][1].twsec, 1541719801+gap,10)
-        self.assertEqual(packetData[4][2],True)
-        self.assertEqual(packetData[4][3],"test_streamID")
-        self.assertEqual(packetData[4][4].keywords[0].id, "TEST_KW2")
-        self.assertEqual(any.from_any(packetData[4][4].keywords[0].value), "2222")
-        self.assertEqual(packetData[4][4].keywords[1].id, "TEST_KW5")
-        self.assertEqual(any.from_any(packetData[4][4].keywords[1].value), 5555)
-        readdata+=packetData[4][0]
+        pkt_idx = 4
+        self.assertEqual(len(packetData[pkt_idx][0]),750)
+        self.assertAlmostEqual(packetData[pkt_idx][1].tfsec, 0.000375,10)
+        self.assertAlmostEqual(packetData[pkt_idx][1].twsec, 1541719801,10)
+        self.assertEqual(packetData[pkt_idx][2],False)
+        self.assertEqual(packetData[pkt_idx][3],"test_streamID")
+        self.assertEqual(packetData[pkt_idx][4].keywords[0].id, "TEST_KW2")
+        self.assertEqual(any.from_any(packetData[pkt_idx][4].keywords[0].value), "2222")
+        self.assertEqual(packetData[pkt_idx][4].keywords[1].id, "TEST_KW1")
+        self.assertEqual(any.from_any(packetData[pkt_idx][4].keywords[1].value), 1111)
+        readdata+=packetData[pkt_idx][0]
+        
+        #Verify Packet 6
+        pkt_idx = 5
+        self.assertEqual(len(packetData[pkt_idx][0]),750)
+        self.assertAlmostEqual(packetData[pkt_idx][1].tfsec, 0.00045,10)
+        self.assertAlmostEqual(packetData[pkt_idx][1].twsec, 1541719801+gap,10)
+        self.assertEqual(packetData[pkt_idx][2],False)
+        self.assertEqual(packetData[pkt_idx][3],"test_streamID")
+        self.assertEqual(packetData[pkt_idx][4].keywords[0].id, "TEST_KW2")
+        self.assertEqual(any.from_any(packetData[pkt_idx][4].keywords[0].value), "2222")
+        self.assertEqual(packetData[pkt_idx][4].keywords[1].id, "TEST_KW5")
+        self.assertEqual(any.from_any(packetData[pkt_idx][4].keywords[1].value), 5555)
+        readdata+=packetData[pkt_idx][0]
+        
+        #Verify Packet 7
+        pkt_idx = 6
+        self.assertEqual(len(packetData[pkt_idx][0]),750)
+        self.assertAlmostEqual(packetData[pkt_idx][1].tfsec, 0.000525,10)
+        self.assertAlmostEqual(packetData[pkt_idx][1].twsec, 1541719801+gap,10)
+        self.assertEqual(packetData[pkt_idx][2],True)
+        self.assertEqual(packetData[pkt_idx][3],"test_streamID")
+        self.assertEqual(packetData[pkt_idx][4].keywords[0].id, "TEST_KW2")
+        self.assertEqual(any.from_any(packetData[pkt_idx][4].keywords[0].value), "2222")
+        self.assertEqual(packetData[pkt_idx][4].keywords[1].id, "TEST_KW5")
+        self.assertEqual(any.from_any(packetData[pkt_idx][4].keywords[1].value), 5555)
+        readdata+=packetData[pkt_idx][0]
         
         self.assertEqual(data, readdata)
 
@@ -782,6 +811,67 @@ class ResourceTests(ossie.utils.testing.ScaComponentTestCase):
          
         print "........ PASSED\n"
         return
+    
+    def testMetadataTimeFilterPreserveSRI(self):
+        
+        dataFileIn = './metadata_contiguous/testdata.out'
+
+        #Read in Data from Test File
+        size = os.path.getsize(dataFileIn)
+        with open (dataFileIn, 'rb') as dataIn:
+            data = list(struct.unpack('h'*(size/2), dataIn.read(size)))
+            
+        #Create Components and Connections
+        print "Launched Component"
+        comp = sb.launch('../FileReader.spd.xml')
+        #comp.log_level(CF.LogLevels.TRACE)
+
+        #comp.advanced_properties.packet_size="10000"
+        comp.advanced_properties.throttle_rate = "0"
+        comp.advanced_properties.enable_time_filtering = True
+        comp.advanced_properties.start_time = .00055
+        comp.source_uri = dataFileIn
+        comp.file_format = 'SHORT_LITTLE_ENDIAN'
+        comp.advanced_properties.use_metadata_file = True
+        
+        sink =  bulkio.InShortPort("dataShort_in")
+        port = comp.getPort("dataShort_out")
+        port.connectPort(sink._this(),"TestConnectionID")
+        #comp.connect(sink, usesPortName='dataShort_out')
+        
+        #Start Components & Push Data
+        sb.start()
+        comp.playback_state = 'PLAY'
+        time.sleep(2)
+
+        eos = False
+        packetData =[]
+        while (not(eos)):
+            packet= sink.getPacket() #data, T, EOS, streamID, sri, sriChanged, inputQueueFlushed
+            packetData.append(packet)
+            eos = packet[2]
+        
+        #for pkt in packetData:
+        #    print pkt[1:-3]
+        #for fstat in comp.file_status:
+        #    print(fstat['DCE:4baa9718-1f21-4f46-865c-aec82b00df91'])
+        #Should have five packets
+        self.assertEqual(len(packetData),1)
+        readdata = []
+        pkt_idx = 0
+        self.assertEqual(len(packetData[pkt_idx][0]),750)
+        self.assertAlmostEqual(packetData[pkt_idx][1].tfsec, 0.000525,10)
+        self.assertAlmostEqual(packetData[pkt_idx][1].twsec, 1541719801,10)
+        self.assertEqual(packetData[pkt_idx][2],True)
+        self.assertEqual(packetData[pkt_idx][3],"test_streamID")
+        self.assertEqual(packetData[pkt_idx][4].keywords[0].id, "TEST_KW2")
+        self.assertEqual(any.from_any(packetData[pkt_idx][4].keywords[0].value), "2222")
+        self.assertEqual(packetData[pkt_idx][4].keywords[1].id, "TEST_KW5")
+        self.assertEqual(any.from_any(packetData[pkt_idx][4].keywords[1].value), 5555)
+        readdata+=packetData[pkt_idx][0]
+        
+        #Verify received Data
+        self.assertEqual(data[5250:], readdata)
 
     def testwithMetadataTimeFilteringStart(self):
         
