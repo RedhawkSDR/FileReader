@@ -1189,12 +1189,75 @@ class ResourceTests(ossie.utils.testing.ScaComponentTestCase):
         self.assertTrue(metadataFileIn in fileStatus[0]['DCE:ebc0a4de-958f-4785-bbe4-03693c34f879'])
 
         sb.stop()
-         
 
         #Release the components and remove the generated files
         comp.releaseObject()
         sink.releaseObject()
-        os.remove(dataFileIn) 
+        os.remove(dataFileIn)
+
+    def testMultipleFiles(self):
+
+        dataFileIn = './multiple_files/'
+        fileList = sorted([os.path.join(dataFileIn,x) for x in os.listdir(dataFileIn)])
+
+        #Read in Data from Test Files
+        data = []
+        for fileIn in fileList:
+            size = os.path.getsize(fileIn)
+            with open (fileIn, 'rb') as dataIn:
+                data.append(list(struct.unpack('h'*(size/2), dataIn.read(size))))
+
+        #Create Components and Connections
+        print "Launched Component"
+        comp = sb.launch('../FileReader.spd.xml')
+        #comp.log_level(CF.LogLevels.TRACE)
+
+        #comp.advanced_properties.packet_size="10000"
+        comp.advanced_properties.throttle_rate = "0"
+        comp.source_uri = dataFileIn
+        comp.file_format = 'SHORT_LITTLE_ENDIAN'
+        comp.advanced_properties.use_metadata_file = False
+
+        sink =  bulkio.InShortPort("dataShort_in")
+        port = comp.getPort("dataShort_out")
+        port.connectPort(sink._this(),"TestConnectionID")
+        #comp.connect(sink, usesPortName='dataShort_out')
+
+        #Start Components & Push Data
+        sb.start()
+        comp.playback_state = 'PLAY'
+        time.sleep(2)
+
+        fileData = []
+        newFile = True
+        noMoreData = False
+        while (not noMoreData):
+            packet = sink.getPacket() #data, T, EOS, streamID, sri, sriChanged, inputQueueFlushed
+            if packet == bulkio.InShortPort.DataTransfer(None,None,None,None,None,None,None):
+                noMoreData = True
+            else:
+                if newFile:
+                    fileData.append(packet[0])
+                    newFile = False
+                else:
+                    fileData[-1].extend(packet[0])
+                if packet[2]:
+                    newFile = True
+        #for file in fileData:
+        #    print 'NEW FILE, len =', len(file)
+        #for fstat in comp.file_status:
+        #    print(fstat['DCE:4baa9718-1f21-4f46-865c-aec82b00df91'])
+        #Should have five packets
+        self.assertEqual(len(fileData),len(data))
+        for idx in xrange(len(data)):
+            self.assertEqual(len(fileData[idx]),len(data[idx]))
+            self.assertEqual(fileData[idx],data[idx])
+
+        #Release the components and remove the generated files
+        comp.releaseObject()
+
+        print "........ PASSED\n"
+        return
 
     def testUshortPortSriScalar(self):
         dataFileIn = './data.in'
