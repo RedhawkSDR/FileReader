@@ -673,10 +673,20 @@ class ResourceTests(ossie.utils.testing.ScaComponentTestCase):
             gap = 5.0
             dataFileIn = './metadata_noncontiguous/testdata.out'
 
-        #Read in Data from Test File
-        size = os.path.getsize(dataFileIn)
-        with open (dataFileIn, 'rb') as dataIn:
-            data = list(struct.unpack('h'*(size/2), dataIn.read(size)))
+        if override_uri:
+            dataFileIn = override_uri
+
+        if os.path.isdir(dataFileIn):
+            fileList = sorted([os.path.join(dataFileIn,x) for x in os.listdir(dataFileIn) if not x.endswith('metadata.xml')])
+        else:
+            fileList = [dataFileIn]
+
+        #Read in Data from Test Files
+        data = []
+        for fileIn in fileList:
+            size = os.path.getsize(fileIn)
+            with open (fileIn, 'rb') as dataIn:
+                data += list(struct.unpack('h'*(size/2), dataIn.read(size)))
             
         #Create Components and Connections
         print "Launched Component"
@@ -685,7 +695,7 @@ class ResourceTests(ossie.utils.testing.ScaComponentTestCase):
 
         #comp.advanced_properties.packet_size="10000"
         comp.advanced_properties.throttle_rate = "0"
-        comp.source_uri = override_uri or dataFileIn
+        comp.source_uri = dataFileIn
         comp.file_format = 'SHORT_LITTLE_ENDIAN'
         comp.advanced_properties.use_metadata_file = True
         
@@ -869,9 +879,15 @@ class ResourceTests(ossie.utils.testing.ScaComponentTestCase):
         self.assertEqual(packetData[pkt_idx][4].keywords[1].id, "TEST_KW5")
         self.assertEqual(any.from_any(packetData[pkt_idx][4].keywords[1].value), 5555)
         readdata+=packetData[pkt_idx][0]
-        
+
         #Verify received Data
         self.assertEqual(data[5250:], readdata)
+
+        #Release the components and remove the generated files
+        comp.releaseObject()
+
+        print "........ PASSED\n"
+        return
 
     def testwithMetadataTimeFilteringStart(self):
         
@@ -986,31 +1002,31 @@ class ResourceTests(ossie.utils.testing.ScaComponentTestCase):
 
         #comp.advanced_properties.packet_size="10000"
         comp.advanced_properties.throttle_rate = ""
-        
+
         # This filtering should skip the last packet. This time is in the middle of the second packet, so we should get all of the first and second packets
         comp.advanced_properties.enable_time_filtering = True
         comp.advanced_properties.stop_time = .00015
-        
+
         comp.source_uri = dataFileIn       
         comp.file_format = 'SHORT_LITTLE_ENDIAN'
         comp.advanced_properties.use_metadata_file = True
-        
+
         sink =  bulkio.InShortPort("dataShort_in")
         port = comp.getPort("dataShort_out")
         port.connectPort(sink._this(),"TestConnectionID")
-        
+
         #Start Components & Push Data
         sb.start()
         comp.playback_state = 'PLAY'
         time.sleep(2)
-        
+
         eos = False
         packetData =[]
         while (not(eos)):
             packet= sink.getPacket() #data, T, EOS, streamID, sri, sriChanged, inputQueueFlushed
             packetData.append(packet)
             eos = packet[2]
-        
+
         # Should have two packets with data
         # Last packet will have EOS==True
         num_pkts = 0
@@ -1021,7 +1037,7 @@ class ResourceTests(ossie.utils.testing.ScaComponentTestCase):
         self.assertEqual(num_pkts,2)
         if num_pkts < len(packetData):
             self.assertEqual(len(packetData),3)
-        
+
         readdata = []
         #Verify Packet 1
         self.assertEqual(len(packetData[0][0]),1000)
@@ -1034,7 +1050,7 @@ class ResourceTests(ossie.utils.testing.ScaComponentTestCase):
         self.assertEqual(packetData[0][4].keywords[1].id, "TEST_KW1")
         self.assertEqual(any.from_any(packetData[0][4].keywords[1].value), 1111)
         readdata+=packetData[0][0]
-        
+
         #Verify Packet 2
         self.assertEqual(len(packetData[1][0]),1000)
         self.assertAlmostEqual(packetData[1][1].tfsec, 0.0001,10)
@@ -1049,32 +1065,32 @@ class ResourceTests(ossie.utils.testing.ScaComponentTestCase):
         self.assertEqual(packetData[1][4].keywords[1].id, "TEST_KW1")
         self.assertEqual(any.from_any(packetData[1][4].keywords[1].value), 1111)
         readdata+=packetData[1][0]
-        
+
         if num_pkts < len(packetData):
             #Verify Packet 3 - empty EOS packet
             self.assertEqual(len(packetData[2][0]),0)
             self.assertEqual(packetData[2][2],True)
             self.assertEqual(packetData[2][3],"test_streamID")
-        
+
         #Verify received Data
         self.assertEqual(data[:2000], readdata)
-        
+
         #Release the components and remove the generated files
         comp.releaseObject()
-          
+
         print "........ PASSED\n"
         return
 
     def testwithMetadataMultipleStreams(self):
-        
+
         #Define test files
         dataFileIn = './metadata_twostreams/'
-        
+
         #Read in Data from Test File
         #size = os.path.getsize(dataFileIn)
         #with open (dataFileIn, 'rb') as dataIn:
         #    data = list(struct.unpack('h'*(size/2), dataIn.read(size)))
-            
+
         #Create Components and Connections
         print "Launched Component"
         comp = sb.launch('../FileReader.spd.xml')
@@ -1082,7 +1098,7 @@ class ResourceTests(ossie.utils.testing.ScaComponentTestCase):
 
         #comp.advanced_properties.packet_size="10000"
         comp.advanced_properties.throttle_rate = ""
-               
+
         comp.source_uri = dataFileIn       
         comp.file_format = 'SHORT_LITTLE_ENDIAN'
         comp.advanced_properties.use_metadata_file = True
@@ -1090,12 +1106,12 @@ class ResourceTests(ossie.utils.testing.ScaComponentTestCase):
         sink =  bulkio.InShortPort("dataShort_in")
         port = comp.getPort("dataShort_out")
         port.connectPort(sink._this(),"TestConnectionID")
-        
+
         #Start Components & Push Data
         sb.start()
         comp.playback_state = 'PLAY'
         time.sleep(2)
-        
+
         eos = False
         packetData =[]
         count = 0 
@@ -1104,11 +1120,11 @@ class ResourceTests(ossie.utils.testing.ScaComponentTestCase):
             if packet[0]:
               packetData.append(packet)
             count+=1
-        
+
         #Validate the total number of packets and the correct streamIDs between all the packets. The verification of the contents of packets (data and metadate) are handled in other tests
-        #Should get a total of 7 packets between the three data files
-        self.assertEqual(len(packetData),7)
-        
+        #Should get a total of 9 packets between the three data files
+        self.assertEqual(len(packetData),9)
+
         streamID1Count = 0
         streamID2Count = 0 
         for packet in packetData:
@@ -1118,37 +1134,34 @@ class ResourceTests(ossie.utils.testing.ScaComponentTestCase):
                 streamID2Count +=1
             else:
                 self.assertTrue(False, "Should Only received packets with the two known streamIDs")
-        
+
         #Validate the number of packets per streamID received.
-        self.assertEqual(streamID1Count, 5, "Should received five packets of stream ID 1")
-        self.assertEqual(streamID2Count, 2, "Should received five packets of stream ID 2")
-        
-        
+        self.assertEqual(streamID1Count, 7, "Should received 7 packets of stream ID 1, instead got %s"%streamID1Count)
+        self.assertEqual(streamID2Count, 2, "Should received 2 packets of stream ID 2, instead got %s"%streamID2Count)
+
         #Release the components and remove the generated files
         comp.releaseObject()
-          
+
         print "........ PASSED\n"
         return
 
-
-    
     def testwithBadMetadataFile(self):
-        
+
         #Define test files
         dataFileIn = './data.in'
         metadataFileIn = 'data.in.metadata.xml'
-        
+
         #Create Test Data File if it doesn't exist
         if not os.path.isfile(dataFileIn):
             with open(dataFileIn, 'wb') as dataIn:
                 dataIn.write(os.urandom(1024))
         #Define test files
-        
+
         #Read in Data from Test File
         size = os.path.getsize(dataFileIn)
         with open (dataFileIn, 'rb') as dataIn:
             data = list(struct.unpack('h'*(size/2), dataIn.read(size)))
-            
+
         #Create Components and Connections
         print "Launched Component"
         comp = sb.launch('../FileReader.spd.xml')
@@ -1158,15 +1171,15 @@ class ResourceTests(ossie.utils.testing.ScaComponentTestCase):
         comp.source_uri = dataFileIn       
         comp.file_format = 'SHORT_LITTLE_ENDIAN'
         comp.advanced_properties.use_metadata_file = True
-        
+
         sink = sb.DataSink()
         comp.connect(sink, usesPortName='dataShort_out')
-        
+
         #Start Components & Push Data
         sb.start()
         comp.playback_state = 'PLAY'
         time.sleep(1)
-        
+
         #Confirm Error in File Status
         print "File Status"
         fileStatus = comp.file_status
