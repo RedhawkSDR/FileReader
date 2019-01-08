@@ -1624,11 +1624,13 @@ class ResourceTests(ossie.utils.testing.ScaComponentTestCase):
         # Check the CPU utilization
         try:
             pid = comp._process.pid()
-            comp_proc = psutil.Process(pid)
+            p = psutil.Process(pid)
+            # psutil.Process API changed in version 2.0.0 of psutil
+            get_cpu_percent = getattr(p,'cpu_percent', getattr(p,'get_cpu_percent'))
             cpu_usage = 0.0
             iterations = 8
             for _ in xrange(iterations):
-                cpu_usage += comp_proc.cpu_percent()
+                cpu_usage += get_cpu_percent()
                 time.sleep(0.25)
             cpu_usage = cpu_usage / iterations
             self.assertTrue(cpu_usage < 1.0, 'CPU Usage too high: %s is not less than 1.0'%cpu_usage)
