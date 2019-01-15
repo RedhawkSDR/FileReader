@@ -1139,6 +1139,26 @@ class ResourceTests(ossie.utils.testing.ScaComponentTestCase):
         self.assertEqual(streamID1Count, 7, "Should received 7 packets of stream ID 1, instead got %s"%streamID1Count)
         self.assertEqual(streamID2Count, 2, "Should received 2 packets of stream ID 2, instead got %s"%streamID2Count)
 
+        #Validate that the files were read in alphabetical order
+        self.assertEqual(packetData[0][3], "test_streamID2", "First packet should be from 'anotherdata.out' with stream ID 'test_streamID2'")
+        self.assertEqual(len(packetData[0][0]), 1500,        "First packet should be from 'anotherdata.out' with 1500 samples")
+        self.assertEqual(packetData[1][3], "test_streamID2", "Second packet should be from 'anotherdata.out' with stream ID 'test_streamID2'")
+        self.assertEqual(len(packetData[1][0]), 1500,        "Second packet should be from 'anotherdata.out' with 1500 samples")
+        self.assertEqual(packetData[2][3], "test_streamID",  "Third packet should be from 'testdata.out' with stream ID 'test_streamID'")
+        self.assertEqual(len(packetData[2][0]), 1000,        "Third packet should be from 'testdata.out' with 1000 samples")
+        self.assertEqual(packetData[3][3], "test_streamID",  "Fourth packet should be from 'testdata.out' with stream ID 'test_streamID'")
+        self.assertEqual(len(packetData[3][0]), 1000,        "Fourth packet should be from 'testdata.out' with 1000 samples")
+        self.assertEqual(packetData[4][3], "test_streamID",  "Fifth packet should be from 'testdata.out' with stream ID 'test_streamID'")
+        self.assertEqual(len(packetData[4][0]), 1000,        "Fifth packet should be from 'testdata.out' with 1000 samples")
+        self.assertEqual(packetData[5][3], "test_streamID",  "Sixth packet should be from 'testdata.out-1' with stream ID 'test_streamID'")
+        self.assertEqual(len(packetData[5][0]), 750,         "Sixth packet should be from 'testdata.out-1' with 750 samples")
+        self.assertEqual(packetData[6][3], "test_streamID",  "Seventh packet should be from 'testdata.out-1' with stream ID 'test_streamID'")
+        self.assertEqual(len(packetData[6][0]), 750,         "Seventh packet should be from 'testdata.out-1' with 750 samples")
+        self.assertEqual(packetData[7][3], "test_streamID",  "Eighth packet should be from 'testdata.out-1' with stream ID 'test_streamID'")
+        self.assertEqual(len(packetData[7][0]), 750,         "Eighth packet should be from 'testdata.out-1' with 750 samples")
+        self.assertEqual(packetData[8][3], "test_streamID",  "Ninth (last) packet should be from 'testdata.out-1' with stream ID 'test_streamID'")
+        self.assertEqual(len(packetData[8][0]), 750,         "Ninth (last) packet should be from 'testdata.out-1' with 750 samples")
+
         #Release the components and remove the generated files
         comp.releaseObject()
 
