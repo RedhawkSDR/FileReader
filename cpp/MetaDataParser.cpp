@@ -49,8 +49,16 @@ void MetaDataParser::resetPacket() {
 
 void MetaDataParser::resetSRI() {
     currentSri.streamID="";
-    currentSri.xstart=0;
-    currentSri.xunits=0;
+    currentSri.blocking = true;
+    currentSri.hversion=1;
+    currentSri.subsize=0;
+    currentSri.xstart=0.0;
+    currentSri.xdelta=0.0;
+    currentSri.xunits=1;
+    currentSri.ystart=0.0;
+    currentSri.ydelta=0.0;
+    currentSri.yunits=1;
+    currentSri.mode=0;
     currentSri.keywords.length(0);
 }
 
@@ -174,10 +182,12 @@ void MetaDataParser::endElement(const XML_Char *name) {
                 } else if (keywordKind==CORBA::tk_string) {
                     currentSri.keywords[cl].value <<= CORBA::string_dup(lastText.c_str());
                 } else if (keywordKind==CORBA::tk_boolean) {
-                    if (lastText=="TRUE" || lastText=="True" || lastText=="true") {
+                    if (lastText =="false" || lastText =="FALSE" || lastText =="False") {
+                        currentSri.keywords[cl].value <<= CORBA::Boolean(false);
+                    } else if (lastText =="true" || lastText =="TRUE" || lastText =="True"){
                         currentSri.keywords[cl].value <<= CORBA::Boolean(true);
                     } else {
-                        currentSri.keywords[cl].value <<= CORBA::Boolean(false);
+                        currentSri.keywords[cl].value <<= CORBA::Boolean((atoi(lastText.c_str()) != 0));
                     }
                 }
             } else {
@@ -194,11 +204,7 @@ void MetaDataParser::endElement(const XML_Char *name) {
                 else if (currentElement.name == "mode")     currentSri.mode = CORBA::Short(atoi(lastText.c_str()));
                 else if (currentElement.name == "streamID") currentSri.streamID = CORBA::String_member(lastText.c_str());
                 else if (currentElement.name == "blocking") {
-                    if (lastText =="false") {
-                            currentSri.blocking = CORBA::Boolean(false);
-                    } else {
-                            currentSri.blocking = CORBA::Boolean(true);
-                    }
+                    std::cout<<"WARNING: Metadata file SRI blocking flag is overridden by default_sri.blocking property"<<std::endl;
                 } else {
                     std::cout<<"ERROR: unknown sri sub-element with name "<<currentElement.name<<std::endl;
                 }

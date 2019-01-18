@@ -34,7 +34,7 @@ struct PacketData {
 class MetaDataParser {
 
 public:
-    MetaDataParser(bulkio::InLongPort *metadataQueuePtr,std::queue<size_t> *packetSizeQueuePtr);
+    MetaDataParser(bulkio::InLongPort *metadataQueuePtr, std::queue<size_t> *packetSizeQueuePtr);
     ~MetaDataParser();
     void parseData(std::vector<char> xmldata);
     void startElement(const XML_Char *name, const XML_Char **atts);

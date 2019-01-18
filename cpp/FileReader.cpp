@@ -1303,6 +1303,7 @@ int FileReader_i::serviceFunction() {
         if (advanced_properties.use_metadata_file) {
             //If using Metadata file, the SRI comes from that file
             current_sri = metadataPkt->SRI;
+            current_sri.blocking = default_sri.blocking;
         } else if (pkt->valid_sri && !advanced_properties.ignore_header_metadata) {
             current_sri = pkt->sri;
             if (advanced_properties.append_default_sri_keywords) {
