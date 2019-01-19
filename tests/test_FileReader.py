@@ -1646,7 +1646,8 @@ class ResourceTests(ossie.utils.testing.ScaComponentTestCase):
             pid = comp._process.pid()
             p = psutil.Process(pid)
             # psutil.Process API changed in version 2.0.0 of psutil
-            get_cpu_percent = getattr(p,'cpu_percent', getattr(p,'get_cpu_percent'))
+            get_cpu_percent = getattr(p,'cpu_percent', getattr(p,'get_cpu_percent', None))
+            assert get_cpu_percent is not None, "Test Environment Error: Unable to find method for measuring CPU percent"
             cpu_usage = 0.0
             iterations = 8
             for _ in xrange(iterations):
