@@ -13,6 +13,7 @@
 #include <cstring>
 #include <iostream>
 #include <bulkio/bulkio.h>
+#include "Queue.hpp"
 
 struct attribute {
     std::string name;
@@ -32,9 +33,11 @@ struct PacketData {
 };
 
 class MetaDataParser {
+    ENABLE_LOGGING
+    typedef threadsafe::Queue<size_t> ts_queue_size_t;
 
 public:
-    MetaDataParser(bulkio::InLongPort *metadataQueuePtr, std::queue<size_t> *packetSizeQueuePtr);
+    MetaDataParser(bulkio::InLongPort *metadataQueuePtr, ts_queue_size_t *packetSizeQueuePtr);
     ~MetaDataParser();
     void parseData(std::vector<char> xmldata);
     void startElement(const XML_Char *name, const XML_Char **atts);
@@ -46,7 +49,7 @@ private:
     void resetPacket();
     void resetSRI();
     bulkio::InLongPort *metadataQueue;
-    std::queue<size_t> *packetSizeQueue;
+    ts_queue_size_t *packetSizeQueue;
 
     std::vector<std::string> text;
     std::vector<Element> elementStack;

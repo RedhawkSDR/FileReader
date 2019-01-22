@@ -589,7 +589,7 @@ void FileReader_i::read_ahead_thread() {
                         bool success = filesystem.read(fs_iter->metadata_filename, &metadata_xml_buffer, metadata_file_size);
                         LOG_TRACE(FileReader_i,"FileReader_i::read_ahead_thread - parsing metadata - read success="<<success<<" file size="<<metadata_file_size<<" xml buffer size="<<metadata_xml_buffer.size());
                         MetaDataParser_i->parseData(metadata_xml_buffer);
-                        //MetaDataParser(metadataQueue,&packetSizeQueue).parseData(metadata_xml_buffer);
+                        LOG_DEBUG(FileReader_i,"Parsed metadata xml "<<fs_iter->metadata_filename<<"; packetSizeQueue.size="<<packetSizeQueue.getUsage()<<"  metadataQueue.size="<<metadataQueue->getCurrentQueueDepth());
                         filesystem.close_file(fs_iter->metadata_filename);
                     } else {
                         //TODO - If metadata file is large read and parse in chucks.
@@ -617,12 +617,18 @@ void FileReader_i::read_ahead_thread() {
                     pkt->file_basename = fs_iter->file_basename;
                     pkt->file_size = fs_iter->file_size;
                     pkt->data_format = "";
-                    // If first packet, process any headers
                     pkt->first_packet = first_packet;
                     pkt->valid_sri = false;
                     pkt->sri.keywords.length(0);
                     pkt->valid_timestamp = false;
                     pkt->sample_rate = 0;
+                    bulkio::sri::zeroTime(pkt->tstamp);
+                    bulkio::sri::zeroSRI(pkt->sri);
+                    pkt->file_position = 0;
+                    pkt->last_packet = false;
+                    pkt->start_sample = 0;
+                    pkt->stop_sample = 0;
+                    // If first packet, process any headers
                     if (first_packet) {
                         filesystem.file_seek(fs_iter->filename,0);
                         running_read_total = 0;
@@ -697,9 +703,10 @@ void FileReader_i::read_ahead_thread() {
                     size_t read_size = size_t(std::min((unsigned long long )pkt_size,read_bytes));
                     // Adjust read_size if metadata mode and not reading BLUE or WAV file
                     if (advanced_properties.use_metadata_file && !(file_format=="BLUEFILE" || file_format=="WAV")) {
-                        if (!packetSizeQueue.empty()) {
-                            read_size = packetSizeQueue.front();
-                            packetSizeQueue.pop();
+                        if (packetSizeQueue.tryPop(read_size)) {
+                            if (read_size == 0) {
+                            	LOG_WARN(FileReader_i, "Got zero size packet from packetSizeQueue. packetSizeQueue.size="<<packetSizeQueue.getUsage());
+                            }
                             if (read_bytes < read_size) {
                                 LOG_ERROR(FileReader_i,"Metadata and data files do not match! Not enough data remaining for all metadata packets. ("<<std::string(fs_iter->filename)<<")");
                                 std::string error_msg = "ERROR: Metadata and data files do not match! Not enough data remaining for all metadata packets." + std::string(fs_iter->filename);
@@ -723,9 +730,12 @@ void FileReader_i::read_ahead_thread() {
                     }
 
                     bool eos = ! filesystem.read(fs_iter->filename, & pkt->dataBuffer, read_size);
+                    if (read_size != pkt->dataBuffer.size()) {
+                        LOG_WARN(FileReader_i,"Tried to read "<<read_size<<" but got "<<pkt->dataBuffer.size());
+                    }
 
                     pkt->start_sample = running_read_total/dd_ptr->bytes_per_sample;
-                    running_read_total += read_size;
+                    running_read_total += pkt->dataBuffer.size();
                     pkt->stop_sample = running_read_total/dd_ptr->bytes_per_sample - 1;
 
                     read_bytes -= pkt->dataBuffer.size();
@@ -1213,6 +1223,12 @@ int FileReader_i::serviceFunction() {
     // Retrieve cached data block -- this is a blocking call
     shared_ptr_file_packet pkt = used_file_packets.pop();
 
+    if (not pkt) {
+        LOG_WARN(FileReader_i,"Got NULL packet from used_file_packets.pop blocking call");
+        st_lock.unlock();
+        return NOOP;
+    }
+
     if(pkt->NO_MORE_DATA){
         st_lock.unlock();
         try{
@@ -1241,10 +1257,37 @@ int FileReader_i::serviceFunction() {
             return NORMAL;
         }
 
-        metaDataPacketSize = metadataPkt->dataBuffer[0]; // Bytes of data associated with metadata
+        if (metadataPkt->dataBuffer.size() > 0) {
+            metaDataPacketSize = metadataPkt->dataBuffer[0]; // Bytes of data associated with metadata
+        } else {
+            LOG_ERROR(FileReader_i,"Metadata packet is missing packet size");
+        }
 
         if (pkt->dataBuffer.size() != metaDataPacketSize) {
             LOG_ERROR(FileReader_i, "Size of data associated with metadata ("<<metaDataPacketSize<<" Bytes) does not equal the size of the incoming data packet ("<<pkt->dataBuffer.size()<<" Bytes). Discarding both.");
+            if (metaDataPacketSize==0 || pkt->dataBuffer.size()==0) {
+                LOG_WARN(FileReader_i,"Packet info: "
+                        <<"buf.size:"<<pkt->dataBuffer.size()
+                        <<"twsec:"<<pkt->tstamp.twsec
+                        <<"tfsec:"<<pkt->tstamp.tfsec
+                        <<"NMD:"<<pkt->NO_MORE_DATA
+                        <<"filepos:"<<pkt->file_position
+                        <<"firstP:"<<pkt->first_packet
+                        <<"lastP:"<<pkt->last_packet
+                        <<"startS:"<<pkt->start_sample
+                        <<"stopS:"<<pkt->stop_sample
+                        );
+                LOG_WARN(FileReader_i,"Metadata info: "
+                        <<"metaDataPacketSize:"<<metaDataPacketSize
+                        <<"buf.size:"<<metadataPkt->dataBuffer.size()
+                        <<"twsec:"<<metadataPkt->T.twsec
+                        <<"tfsec:"<<metadataPkt->T.tfsec
+                        <<"EOS:"<<metadataPkt->EOS
+                        <<"sriChanged:"<<metadataPkt->sriChanged
+                        <<"qFlushed:"<<metadataPkt->inputQueueFlushed
+                        <<"streamID:"<<metadataPkt->streamID
+                        );
+            }
             st_lock.unlock();
             available_file_packets.push(pkt);
             delete metadataPkt;
@@ -1390,7 +1433,7 @@ int FileReader_i::serviceFunction() {
             bulkio::InLongPort::dataTransfer *newMPkt = 0;
             popped = used_file_packets.tryPop(newPkt);
             if (popped) {
-                if (pkt->NO_MORE_DATA || is_packet_in_range(newPkt)) {
+                if (newPkt->NO_MORE_DATA || is_packet_in_range(newPkt)) {
                     used_file_packets.pushFront(newPkt);
                     break;
                 } else if (advanced_properties.use_metadata_file) {

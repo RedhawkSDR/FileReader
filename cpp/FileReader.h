@@ -209,6 +209,7 @@ class FileReader_i : public FileReader_base {
     typedef boost::mutex::scoped_lock exclusive_lock;
     typedef boost::shared_ptr<file_packet> shared_ptr_file_packet;
     typedef threadsafe::Queue<shared_ptr_file_packet> ts_queue_file_packet;
+    typedef threadsafe::Queue<size_t> ts_queue_size_t;
     friend class BULKIO_dataUber_Out_i;
     friend class BULKIO_dataChar_Out_i;
 
@@ -280,7 +281,7 @@ private:
 
     //Metadata File Objects
     bulkio::InLongPort *metadataQueue;
-    std::queue<size_t> packetSizeQueue;
+    ts_queue_size_t packetSizeQueue;
     //Metadata parser
     MetaDataParser *MetaDataParser_i;
 

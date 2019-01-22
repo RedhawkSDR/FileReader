@@ -3,6 +3,7 @@
  */
 
 #include "MetaDataParser.h"
+PREPARE_LOGGING(MetaDataParser)
 
 void startElementWrapper(void *userData, const XML_Char *name, const XML_Char **atts) {
     ((MetaDataParser*) userData)->startElement(name, atts);
@@ -17,7 +18,7 @@ void charDataWrapper(void *userData,const XML_Char *chardata,int len) {
     ((MetaDataParser*) userData)->charData(data);
 }
 
-MetaDataParser::MetaDataParser(bulkio::InLongPort *metadataQueuePtr,std::queue<size_t> *packetSizeQueuePtr) :
+MetaDataParser::MetaDataParser(bulkio::InLongPort *metadataQueuePtr, ts_queue_size_t *packetSizeQueuePtr) :
         metadataQueue(metadataQueuePtr), packetSizeQueue(packetSizeQueuePtr), keywordCount(0), initialSri(true) {
     parser = XML_ParserCreate(NULL);
     resetPacket();
@@ -65,7 +66,7 @@ void MetaDataParser::resetSRI() {
 void MetaDataParser::startElement(const XML_Char *name, const XML_Char **atts) {
     Element currentElement;
     currentElement.name = name;
-    //std::cout << "TRACE: MetaDataParser::startElement - "<<currentElement.name<< std::endl;
+    LOG_TRACE(MetaDataParser,"MetaDataParser::startElement - "<<currentElement.name);
     //Get attributes. Attributes are each two strings, one for name and one for value. The list is null terminated.
     unsigned int i = 0;
     while (atts[i]!=0) {
@@ -88,9 +89,9 @@ void MetaDataParser::endElement(const XML_Char *name) {
     Element parentElement;
     currentElement = elementStack.back();
     elementStack.pop_back();
-    //std::cout << "TRACE: MetaDataParser::endElement - "<<currentElement.name<< std::endl;
+    LOG_TRACE(MetaDataParser,"MetaDataParser::endElement - "<<currentElement.name);
     if (currentElement.name !=name) {
-        std::cout << "**Problem. This should never happen "<< std::endl;
+        LOG_ERROR(MetaDataParser,"currentElement.name != name");
     }
 
     if (currentElement.name=="FileWriter_metadata") {
@@ -124,6 +125,9 @@ void MetaDataParser::endElement(const XML_Char *name) {
         data_length[0] = currentPacket.dataLength;
         metadataQueue->pushPacket(data_length,currentPacket.tstamp,currentPacket.EOS, currentPacket.streamID.c_str());
         packetSizeQueue->push(currentPacket.dataLength);
+        if (currentPacket.dataLength == 0 && !currentPacket.EOS) {
+            LOG_DEBUG(MetaDataParser, "MetaDataParser::endElement - added empty packet that is NOT an EOS packet ("<<currentPacket.streamID<<"|ws:"<<currentPacket.tstamp.twsec<<"|fs:"<<currentPacket.tstamp.tfsec<<"|PSQ:"<<packetSizeQueue->getUsage()<<"|MQ:"<<metadataQueue->getCurrentQueueDepth()<<")");
+        }
         resetPacket();
     } else {
 
@@ -204,20 +208,21 @@ void MetaDataParser::endElement(const XML_Char *name) {
                 else if (currentElement.name == "mode")     currentSri.mode = CORBA::Short(atoi(lastText.c_str()));
                 else if (currentElement.name == "streamID") currentSri.streamID = CORBA::String_member(lastText.c_str());
                 else if (currentElement.name == "blocking") {
-                    std::cout<<"WARNING: Metadata file SRI blocking flag is overridden by default_sri.blocking property"<<std::endl;
+                    LOG_WARN(MetaDataParser,"Metadata file SRI blocking flag is overridden by default_sri.blocking property");
                 } else {
-                    std::cout<<"ERROR: unknown sri sub-element with name "<<currentElement.name<<std::endl;
+                    LOG_ERROR(MetaDataParser,"Unknown sri sub-element with name "<<currentElement.name);
                 }
             }
             // end if parentElement is 'sri'
         } else if (parentElement.name=="timecode") {
             // Parent is timecode, to one of the timecode sub elements
-            if (currentElement.name=="tcmode")          currentPacket.tstamp.tcmode = CORBA::Short(atoi(lastText.c_str()));
-            else if (currentElement.name=="tcstatus")     currentPacket.tstamp.tcstatus = CORBA::Short(atoi(lastText.c_str()));
-            else if (currentElement.name=="toff")         currentPacket.tstamp.toff = CORBA::Double(atof(lastText.c_str()));
-            else if (currentElement.name=="twsec")        currentPacket.tstamp.twsec = CORBA::Double(atof(lastText.c_str()));
-            else if (currentElement.name=="tfsec")          currentPacket.tstamp.tfsec = CORBA::Double(atof(lastText.c_str()));
-            else std::cout<<"ERROR: unknown timecode sub-element with name "<<currentElement.name<<std::endl;
+            if (currentElement.name=="tcmode") {          currentPacket.tstamp.tcmode = CORBA::Short(atoi(lastText.c_str()));
+            } else if (currentElement.name=="tcstatus") { currentPacket.tstamp.tcstatus = CORBA::Short(atoi(lastText.c_str()));
+            } else if (currentElement.name=="toff") {     currentPacket.tstamp.toff = CORBA::Double(atof(lastText.c_str()));
+            } else if (currentElement.name=="twsec") {    currentPacket.tstamp.twsec = CORBA::Double(atof(lastText.c_str()));
+            } else if (currentElement.name=="tfsec") {    currentPacket.tstamp.tfsec = CORBA::Double(atof(lastText.c_str()));
+            } else { LOG_ERROR(MetaDataParser,"Unknown timecode sub-element with name "<<currentElement.name);
+            }
             // end if parentElement is 'timecode'
         } else if (parentElement.name=="packet") {
             // Parent is packet, element is either timecode or an individual packet element
@@ -237,11 +242,11 @@ void MetaDataParser::endElement(const XML_Char *name) {
                     currentPacket.EOS = (atoi(lastText.c_str()) != 0);
                 }
             } else {
-                std::cout<<"ERROR: unknown packet sub-element with name "<<currentElement.name<<std::endl;
+                LOG_ERROR(MetaDataParser,"Unknown packet sub-element with name "<<currentElement.name);
             }
             // end if parentElement is 'packet'
         } else {
-            std::cout<<"ERROR: unknown element/sub-element combo. parent="<<parentElement.name<<" and sub="<<currentElement.name<<std::endl;
+            LOG_ERROR(MetaDataParser,"Unknown element/sub-element combo. parent="<<parentElement.name<<" and sub="<<currentElement.name);
         }
     }
 }
@@ -250,7 +255,7 @@ void MetaDataParser::parseData(std::vector<char> xmldata) {
     reset();
     int done=1;
     if (!XML_Parse(parser, &xmldata[0],xmldata.size(), done)) {
-        std::cout<<"Parse Error at line "<<XML_GetCurrentLineNumber(parser)<<"\nError:\n"<<XML_ErrorString(XML_GetErrorCode(parser))<<std::endl;
+        LOG_ERROR(MetaDataParser,"Parse Error at line "<<XML_GetCurrentLineNumber(parser)<<"\nError:\n"<<XML_ErrorString(XML_GetErrorCode(parser)));
     }
 }
 
