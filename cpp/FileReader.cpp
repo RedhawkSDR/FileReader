@@ -52,6 +52,7 @@ FileReader_i::~FileReader_i() {
     stop_cache_thread();
 
     delete metadataQueue;
+    delete packetSizeQueue;
     delete MetaDataParser_i;
 
 }
@@ -66,7 +67,9 @@ void FileReader_i::constructor()
     // The metadata queue uses a bulkio port because it contains a queue for packets and SRI, this is just used as an internal data helper and is not actually a bulkio port
     metadataQueue = new bulkio::InLongPort("metadataQueue");
     metadataQueue->setMaxQueueDepth(1000000);
-    MetaDataParser_i = new MetaDataParser(metadataQueue,&packetSizeQueue);
+    packetSizeQueue = new ts_queue_size_t;
+    packetSizeQueue->setDepth(1000000);
+    MetaDataParser_i = new MetaDataParser(metadataQueue,packetSizeQueue);
 
     //properties are not updated until callback function is called and they are explicitly
     addPropertyListener(advanced_properties, this, &FileReader_i::advanced_propertiesChanged);
@@ -376,12 +379,17 @@ void FileReader_i::start_cache_thread() {
     if (metadataQueue) {
         delete metadataQueue;
     }
+    if (packetSizeQueue) {
+        delete packetSizeQueue;
+    }
     if (MetaDataParser_i) {
         delete MetaDataParser_i;
     }
     metadataQueue = new bulkio::InLongPort("metadataQueue");
     metadataQueue->setMaxQueueDepth(1000000);
-    MetaDataParser_i = new MetaDataParser(metadataQueue,&packetSizeQueue);
+    packetSizeQueue = new ts_queue_size_t;
+    packetSizeQueue->setDepth(1000000);
+    MetaDataParser_i = new MetaDataParser(metadataQueue,packetSizeQueue);
 
     buffer_thread = new boost::thread(&FileReader_i::read_ahead_thread, this);
 
@@ -589,7 +597,7 @@ void FileReader_i::read_ahead_thread() {
                         bool success = filesystem.read(fs_iter->metadata_filename, &metadata_xml_buffer, metadata_file_size);
                         LOG_TRACE(FileReader_i,"FileReader_i::read_ahead_thread - parsing metadata - read success="<<success<<" file size="<<metadata_file_size<<" xml buffer size="<<metadata_xml_buffer.size());
                         MetaDataParser_i->parseData(metadata_xml_buffer);
-                        LOG_DEBUG(FileReader_i,"Parsed metadata xml "<<fs_iter->metadata_filename<<"; packetSizeQueue.size="<<packetSizeQueue.getUsage()<<"  metadataQueue.size="<<metadataQueue->getCurrentQueueDepth());
+                        LOG_DEBUG(FileReader_i,"Parsed metadata xml "<<fs_iter->metadata_filename<<"; packetSizeQueue.size="<<packetSizeQueue->getUsage()<<"  metadataQueue.size="<<metadataQueue->getCurrentQueueDepth());
                         filesystem.close_file(fs_iter->metadata_filename);
                     } else {
                         //TODO - If metadata file is large read and parse in chucks.
@@ -703,9 +711,9 @@ void FileReader_i::read_ahead_thread() {
                     size_t read_size = size_t(std::min((unsigned long long )pkt_size,read_bytes));
                     // Adjust read_size if metadata mode and not reading BLUE or WAV file
                     if (advanced_properties.use_metadata_file && !(file_format=="BLUEFILE" || file_format=="WAV")) {
-                        if (packetSizeQueue.tryPop(read_size)) {
-                            if (read_size == 0) {
-                            	LOG_WARN(FileReader_i, "Got zero size packet from packetSizeQueue. packetSizeQueue.size="<<packetSizeQueue.getUsage());
+                        if (packetSizeQueue->tryPop(read_size)) {
+                            if (read_size == 0 && packetSizeQueue->getUsage() != 0) {
+                                LOG_WARN(FileReader_i, "Got zero size packet from packetSizeQueue that is not the last packet. packetSizeQueue.size="<<packetSizeQueue->getUsage());
                             }
                             if (read_bytes < read_size) {
                                 LOG_ERROR(FileReader_i,"Metadata and data files do not match! Not enough data remaining for all metadata packets. ("<<std::string(fs_iter->filename)<<")");
@@ -731,7 +739,7 @@ void FileReader_i::read_ahead_thread() {
 
                     bool eos = ! filesystem.read(fs_iter->filename, & pkt->dataBuffer, read_size);
                     if (read_size != pkt->dataBuffer.size()) {
-                        LOG_WARN(FileReader_i,"Tried to read "<<read_size<<" but got "<<pkt->dataBuffer.size());
+                        LOG_WARN(FileReader_i,"Tried to read "<<read_size<<" but got "<<pkt->dataBuffer.size()<<" from file "<<fs_iter->filename);
                     }
 
                     pkt->start_sample = running_read_total/dd_ptr->bytes_per_sample;

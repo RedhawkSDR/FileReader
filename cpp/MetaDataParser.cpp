@@ -127,6 +127,8 @@ void MetaDataParser::endElement(const XML_Char *name) {
         packetSizeQueue->push(currentPacket.dataLength);
         if (currentPacket.dataLength == 0 && !currentPacket.EOS) {
             LOG_DEBUG(MetaDataParser, "MetaDataParser::endElement - added empty packet that is NOT an EOS packet ("<<currentPacket.streamID<<"|ws:"<<currentPacket.tstamp.twsec<<"|fs:"<<currentPacket.tstamp.tfsec<<"|PSQ:"<<packetSizeQueue->getUsage()<<"|MQ:"<<metadataQueue->getCurrentQueueDepth()<<")");
+        } else if (currentPacket.dataLength < 0) {
+            LOG_ERROR(MetaDataParser, "MetaDataParser::endElement - added negative-sized packet ("<<currentPacket.streamID<<"|ws:"<<currentPacket.tstamp.twsec<<"|fs:"<<currentPacket.tstamp.tfsec<<"|PSQ:"<<packetSizeQueue->getUsage()<<"|MQ:"<<metadataQueue->getCurrentQueueDepth()<<")");
         }
         resetPacket();
     } else {

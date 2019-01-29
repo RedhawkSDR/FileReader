@@ -281,7 +281,7 @@ private:
 
     //Metadata File Objects
     bulkio::InLongPort *metadataQueue;
-    ts_queue_size_t packetSizeQueue;
+    ts_queue_size_t *packetSizeQueue;
     //Metadata parser
     MetaDataParser *MetaDataParser_i;
 
