@@ -1190,6 +1190,60 @@ class ResourceTests(ossie.utils.testing.ScaComponentTestCase):
         print "........ PASSED\n"
         return
 
+    def testwithMetadataSriBlocking(self):
+        
+        #Define test files
+        dataFileIn = './metadata_multiple_files/testdata.out'
+            
+        #Create Components and Connections
+        print "Launched Component"
+        comp = sb.launch('../FileReader.spd.xml')
+        #comp.log_level(CF.LogLevels.TRACE)
+
+        comp.advanced_properties.throttle_rate = ""
+
+        comp.source_uri = dataFileIn       
+        comp.file_format = 'SHORT_LITTLE_ENDIAN'
+        comp.advanced_properties.use_metadata_file = True
+        comp.default_sri.blocking = False
+
+        sink =  bulkio.InShortPort("dataShort_in")
+        port = comp.getPort("dataShort_out")
+        port.connectPort(sink._this(),"TestConnectionID")
+
+        #Start Components & Push Data
+        sb.start()
+        comp.playback_state = 'PLAY'
+        time.sleep(2)
+
+        eos = False
+        packetData =[]
+        while (not(eos)):
+            packet= sink.getPacket() #data, T, EOS, streamID, sri, sriChanged, inputQueueFlushed
+            packetData.append(packet)
+            eos = packet[2]
+
+        self.assertEqual(packetData[0][4].blocking,False)
+        
+        comp.default_sri.blocking = True
+        comp.playback_state = 'PLAY'
+        time.sleep(2)
+
+        eos = False
+        packetData =[]
+        while (not(eos)):
+            packet= sink.getPacket() #data, T, EOS, streamID, sri, sriChanged, inputQueueFlushed
+            packetData.append(packet)
+            eos = packet[2]
+
+        self.assertEqual(packetData[0][4].blocking,True)
+
+        #Release the components and remove the generated files
+        comp.releaseObject()
+
+        print "........ PASSED\n"
+        return
+
     def testwithMetadataMultipleStreams(self):
 
         #Define test files
