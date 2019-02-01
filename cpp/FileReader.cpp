@@ -221,11 +221,17 @@ void FileReader_i::sample_rateChanged(std::string oldValue, std::string newValue
             LOG_WARN(FileReader_i, "Ignoring attempt to set sample rate while reading blue file");
             sample_rate = oldValue;
         } else {
-            sample_rate_d = STD_STRING_HELPER::SPS_string_to_number(newValue);
-            current_sample_rate = sample_rate_d;
-            reset_throttle();
-            reconstruct_property_sri(current_sample_rate);
-            restart_read_ahead_caching();
+            double newDouble = STD_STRING_HELPER::SPS_string_to_number(newValue);
+            if (std::abs(newDouble-sample_rate_d) > 0.0000001) {
+                LOG_TRACE(FileReader_i,"FileReader_i::sample_rateChanged -- SR converted to double is new; using new value");
+                sample_rate_d = newDouble;
+                current_sample_rate = sample_rate_d;
+                reset_throttle();
+                reconstruct_property_sri(current_sample_rate);
+                restart_read_ahead_caching();
+            } else {
+                sample_rate = oldValue;
+            }
         }
     }
 }

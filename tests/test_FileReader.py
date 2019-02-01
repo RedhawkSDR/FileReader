@@ -825,6 +825,36 @@ class ResourceTests(ossie.utils.testing.ScaComponentTestCase):
             print "........ PASSED\n"
         return
 
+    def testNewSampleRate(self):
+
+        #Create Components and Connections
+        comp = sb.launch('../FileReader.spd.xml')
+        #comp.log_level(CF.LogLevels.TRACE)
+        print "Launched Component"
+
+        comp.sample_rate = "1000 sps"
+        sr1 = '%s'%comp.sample_rate
+        comp.sample_rate = "1 Ksps"
+        sr2 = '%s'%comp.sample_rate
+        self.assertEqual(sr1, sr2, "Equivalent sample rate causes unnecessary reconfigure")
+        comp.sample_rate = "1000"
+        sr3 = '%s'%comp.sample_rate
+        self.assertEqual(sr2, sr3, "Equivalent sample rate causes unnecessary reconfigure")
+        comp.sample_rate = "1"
+        sr4 = '%s'%comp.sample_rate
+        self.assertNotEqual(sr3, sr4, "New sample rate did not cause necessary reconfigure")
+        comp.sample_rate = "1.001"
+        sr5 = '%s'%comp.sample_rate
+        self.assertNotEqual(sr4, sr5, "New sample rate did not cause necessary reconfigure")
+        comp.sample_rate = "1.00100000001"
+        sr6 = '%s'%comp.sample_rate
+        self.assertEqual(sr5, sr6, "Equivalent sample rate causes unnecessary reconfigure")
+
+        comp.releaseObject()
+
+        print "........ PASSED\n"
+        return
+
     def testMetadataReuseWithoutRelaunch(self):
 
         #Create Components and Connections
