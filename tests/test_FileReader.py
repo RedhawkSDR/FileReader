@@ -1265,7 +1265,6 @@ class ResourceTests(ossie.utils.testing.ScaComponentTestCase):
         comp.source_uri = dataFileIn       
         comp.file_format = 'SHORT_LITTLE_ENDIAN'
         comp.advanced_properties.use_metadata_file = True
-        comp.default_sri.blocking = False
 
         sink =  bulkio.InShortPort("dataShort_in")
         port = comp.getPort("dataShort_out")
@@ -1273,6 +1272,21 @@ class ResourceTests(ossie.utils.testing.ScaComponentTestCase):
 
         #Start Components & Push Data
         sb.start()
+        self.assertEqual(comp.default_sri.blocking,True)
+        comp.playback_state = 'PLAY'
+        time.sleep(2)
+
+        eos = False
+        packetData =[]
+        while (not(eos)):
+            packet= sink.getPacket() #data, T, EOS, streamID, sri, sriChanged, inputQueueFlushed
+            packetData.append(packet)
+            eos = packet[2]
+
+        self.assertEqual(packetData[0][4].blocking,True)
+
+        comp.default_sri.blocking = False
+        self.assertEqual(comp.default_sri.blocking,False)
         comp.playback_state = 'PLAY'
         time.sleep(2)
 
@@ -1286,6 +1300,7 @@ class ResourceTests(ossie.utils.testing.ScaComponentTestCase):
         self.assertEqual(packetData[0][4].blocking,False)
 
         comp.default_sri.blocking = True
+        self.assertEqual(comp.default_sri.blocking,True)
         comp.playback_state = 'PLAY'
         time.sleep(2)
 
