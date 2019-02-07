@@ -1312,6 +1312,41 @@ class ResourceTests(ossie.utils.testing.ScaComponentTestCase):
             eos = packet[2]
 
         self.assertEqual(packetData[0][4].blocking,True)
+        
+        comp.source_uri = './metadata_twostreams/'
+        comp.default_sri.blocking = False
+        self.assertEqual(comp.default_sri.blocking,False)
+        comp.playback_state = 'PLAY'
+        time.sleep(2)
+
+        cnt = 0
+        eos = 0
+        streams = set([])
+        while (cnt < 50 and (len(streams) < 2 or eos != len(streams))):
+            packet = sink.getPacket() #data, T, EOS, streamID, sri, sriChanged, inputQueueFlushed
+            streams.add(packet[3])
+            if packet[2]:
+                eos += 1
+            self.assertEqual(packet[4].blocking,False)
+            cnt += 1
+        self.assertTrue(len(streams)>1)
+        
+        comp.default_sri.blocking = True
+        self.assertEqual(comp.default_sri.blocking,True)
+        comp.playback_state = 'PLAY'
+        time.sleep(2)
+
+        cnt = 0
+        eos = 0
+        streams = set([])
+        while (cnt < 50 and (len(streams) < 2 or eos != len(streams))):
+            packet = sink.getPacket() #data, T, EOS, streamID, sri, sriChanged, inputQueueFlushed
+            streams.add(packet[3])
+            if packet[2]:
+                eos += 1
+            self.assertEqual(packet[4].blocking,True)
+            cnt += 1
+        self.assertTrue(len(streams)>1)
 
         #Release the components and remove the generated files
         comp.releaseObject()
