@@ -205,7 +205,7 @@ void FileReader_base::loadProperties()
                 "readwrite",
                 "",
                 "external",
-                "configure");
+                "property");
 
     addProperty(component_status,
                 component_status_struct(),
