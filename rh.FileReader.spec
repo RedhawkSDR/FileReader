@@ -29,8 +29,8 @@ Prefix:         %{_prefix}
 %define _infodir       %{_prefix}/info
 
 Name:           rh.FileReader
-Version:        4.1.0
-Release:        4%{?dist}
+Version:        5.0.0
+Release:        1%{?dist}
 Summary:        Component %{name}
 
 Group:          REDHAWK/Components
@@ -41,10 +41,13 @@ BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires:  redhawk-devel >= 2.0
 Requires:       redhawk >= 2.0
 
-BuildRequires:  rh.RedhawkDevUtils-devel >= 4.0
-Requires:       rh.RedhawkDevUtils >= 4.0
+BuildRequires:  rh.RedhawkDevUtils-devel >= 5.0
+Requires:       rh.RedhawkDevUtils >= 5.0
 BuildRequires:  rh.blueFileLib-devel >= 2.1
 Requires:       rh.blueFileLib >= 2.1
+
+BuildRequires:  expat-devel >= 1.95.8
+Requires:       expat >= 1.95.8
 
 # Interface requirements
 BuildRequires:  bulkioInterfaces >= 2.0

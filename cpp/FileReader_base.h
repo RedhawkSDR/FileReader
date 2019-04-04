@@ -54,6 +54,10 @@ class FileReader_base : public Component, protected ThreadedComponent
         std::string center_frequency;
         /// Property: playback_state
         std::string playback_state;
+        /// Property: output_bulkio_byte_order
+        std::string output_bulkio_byte_order;
+        /// Property: host_byte_order
+        std::string host_byte_order;
         /// Property: advanced_properties
         advanced_properties_struct advanced_properties;
         /// Property: default_timestamp

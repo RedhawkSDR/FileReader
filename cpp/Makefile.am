@@ -22,7 +22,7 @@ bin_PROGRAMS = FileReader
 
 xmldir = $(prefix)/dom/components/rh/FileReader/
 dist_xml_DATA = ../FileReader.scd.xml ../FileReader.prf.xml ../FileReader.spd.xml
-ACLOCAL_AMFLAGS = -I m4 -I${OSSIEHOME}/share/aclocal/ossie
+ACLOCAL_AMFLAGS = -I m4 -I${OSSIEHOME}/share/aclocal/ossie -I acinclude
 AUTOMAKE_OPTIONS = subdir-objects
 
 
@@ -47,7 +47,7 @@ distclean-local:
 # you wish to manually control these options.
 include $(srcdir)/Makefile.am.ide
 FileReader_SOURCES = $(redhawk_SOURCES_auto)
-FileReader_LDADD = $(SOFTPKG_LIBS) $(PROJECTDEPS_LIBS) $(BOOST_LDFLAGS) $(BOOST_THREAD_LIB) $(BOOST_REGEX_LIB) $(BOOST_SYSTEM_LIB) $(INTERFACEDEPS_LIBS) $(redhawk_LDADD_auto)
-FileReader_CXXFLAGS = -Wall $(SOFTPKG_CFLAGS) $(PROJECTDEPS_CFLAGS) $(BOOST_CPPFLAGS) $(INTERFACEDEPS_CFLAGS) $(redhawk_INCLUDES_auto)
-FileReader_LDFLAGS = -Wall $(redhawk_LDFLAGS_auto)
+FileReader_LDADD = $(SOFTPKG_LIBS) $(PROJECTDEPS_LIBS) $(BOOST_LDFLAGS) $(BOOST_THREAD_LIB) $(BOOST_REGEX_LIB) $(BOOST_SYSTEM_LIB) $(INTERFACEDEPS_LIBS) $(redhawk_LDADD_auto) $(EXPAT_LIBS)
+FileReader_CXXFLAGS = -Wall $(SOFTPKG_CFLAGS) $(PROJECTDEPS_CFLAGS) $(BOOST_CPPFLAGS) $(INTERFACEDEPS_CFLAGS) $(redhawk_INCLUDES_auto) $(EXPAT_CFLAGS)
+FileReader_LDFLAGS = -Wall $(redhawk_LDFLAGS_auto) $(EXPAT_LDFLAGS)
 

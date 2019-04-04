@@ -63,6 +63,8 @@
 #include <rh_utils.h>
 #include "Queue.hpp"
 
+#include "MetaDataParser.h"
+
 //#define _DEBUG_
 #define BLUEFILE_BLOCK_SIZE 512   // Exact size of fixed header
 #define WAV_HEADER_READ_SIZE 512        // Taking more than I need incase the RIFF headers are out of order
@@ -72,7 +74,7 @@
 #define CORBA_MAX_TRANSFER_BYTES omniORB::giopMaxMsgSize()
 
 namespace FILE_READER {
-	const std::string DEF_SOURCE_URI = "file://[path_to_local_file_or_dir] OR sca://[path_to_sca_file_or_dir]";
+    const std::string DEF_SOURCE_URI = "file://[path_to_local_file_or_dir] OR sca://[path_to_sca_file_or_dir]";
     enum FILESYSTEM_TYPE {
         LOCAL_FILESYSTEM = 0,
         SCA_FILESYSTEM = 1,
@@ -81,10 +83,10 @@ namespace FILE_READER {
 };
 
 namespace CF_KW_OPERATIONS {
-	const short NONE = -1;
-	const short COL_CHAN = 0;
-	const short COL  = 1;
-	const short CHAN = 2;
+    const short NONE = -1;
+    const short COL_CHAN = 0;
+    const short COL  = 1;
+    const short CHAN = 2;
 };
 
 namespace WAV_HELPERS {
@@ -117,6 +119,8 @@ namespace WAV_HELPERS {
     };
 
     inline bool is_waveFileHeader_valid(struct wav_file_header & wfh) {
+        // Default WAVE file byte ordering is little endian
+        // WAVE files with big endian byte ordering will start with RIFX instead of RIFF
         if (!strncmp(wfh.riff.chunk_name, "RIFF", 4) && !strncmp(wfh.format.chunk_name, "fmt ", 4) && !strncmp(wfh.data.chunk_name, "data ", 4)) {
             return true;
         }
@@ -129,34 +133,34 @@ namespace WAV_HELPERS {
 namespace FILE_READER_DOMAIN_MGR_HELPERS {
 
 inline CF::DomainManager_var domainManager_id_to_var(std::string id) {
-		CF::DomainManager_var domainMgr_var = CF::DomainManager::_nil();
-		CosNaming::BindingIterator_var it;
-		CosNaming::BindingList_var bl;
-		CosNaming::NamingContext_var context = CosNaming::NamingContext::_narrow(ossie::corba::InitialNamingContext());
-		context->list(100, bl, it);
-		for (unsigned int ii = 0; ii < bl->length(); ++ii) {
-			try {
-				std::string domString = std::string(bl[ii].binding_name[0].id) + "/" + std::string(bl[ii].binding_name[0].id);
-				CosNaming::Name_var cosName = omni::omniURI::stringToName(domString.c_str());
-				CORBA::Object_var bobj = context->resolve(cosName);
-				domainMgr_var = CF::DomainManager::_narrow(bobj);
-				if (id.empty() || id == std::string(domainMgr_var->identifier())){
-					return domainMgr_var;
-				}
-			} catch (...) {};
-		}
-		return domainMgr_var;
-	}
+        CF::DomainManager_var domainMgr_var = CF::DomainManager::_nil();
+        CosNaming::BindingIterator_var it;
+        CosNaming::BindingList_var bl;
+        CosNaming::NamingContext_var context = CosNaming::NamingContext::_narrow(ossie::corba::InitialNamingContext());
+        context->list(100, bl, it);
+        for (unsigned int ii = 0; ii < bl->length(); ++ii) {
+            try {
+                std::string domString = std::string(bl[ii].binding_name[0].id) + "/" + std::string(bl[ii].binding_name[0].id);
+                CosNaming::Name_var cosName = omni::omniURI::stringToName(domString.c_str());
+                CORBA::Object_var bobj = context->resolve(cosName);
+                domainMgr_var = CF::DomainManager::_narrow(bobj);
+                if (id.empty() || id == std::string(domainMgr_var->identifier())){
+                    return domainMgr_var;
+                }
+            } catch (...) {};
+        }
+        return domainMgr_var;
+    }
 
 };
 
 struct file_packet {
-	bool NO_MORE_DATA;
+    bool NO_MORE_DATA;
     // Identifiers for first and last packets (sos and eos)
     bool first_packet;
     bool last_packet;
 
-    // Must be filled in if (first_packet == true) 
+    // Must be filled in if (first_packet == true)
     std::string file_name;
     std::string file_basename;
     unsigned long long file_size; // in bytes
@@ -181,21 +185,31 @@ struct file_packet {
 };
 
 struct loop_info{
-	loop_info(){};
-	loop_info(const std::string &  _stream_id, const  BULKIO::PrecisionUTCTime& _tstamp ){
-		stream_id = _stream_id;
-		tstamp = _tstamp;
-	};
-	std::string stream_id;
-	BULKIO::PrecisionUTCTime tstamp;
+    loop_info(){};
+    loop_info(const std::string &  _stream_id, const  BULKIO::PrecisionUTCTime& _tstamp ){
+        stream_id = _stream_id;
+        tstamp = _tstamp;
+    };
+    std::string stream_id;
+    BULKIO::PrecisionUTCTime tstamp;
 };
 
+inline bool operator> (const file_status_struct_struct& s1, const file_status_struct_struct& s2) {
+    if ( s1.file_basename > s2.file_basename) return true;
+    return false;
+}
+inline bool operator< (const file_status_struct_struct& s1, const file_status_struct_struct& s2) {
+    if ( s1.file_basename < s2.file_basename) return true;
+    return false;
+}
+
 class FileReader_i : public FileReader_base {
-	ENABLE_LOGGING
+    ENABLE_LOGGING
 
     typedef boost::mutex::scoped_lock exclusive_lock;
     typedef boost::shared_ptr<file_packet> shared_ptr_file_packet;
     typedef threadsafe::Queue<shared_ptr_file_packet> ts_queue_file_packet;
+    typedef threadsafe::Queue<size_t> ts_queue_size_t;
     friend class BULKIO_dataUber_Out_i;
     friend class BULKIO_dataChar_Out_i;
 
@@ -205,6 +219,7 @@ public:
     void start() throw (CF::Resource::StartError, CORBA::SystemException);
     void stop() throw (CF::Resource::StopError, CORBA::SystemException);
     //void configure(const CF::Properties&) throw (CORBA::SystemException, CF::PropertySet::InvalidConfiguration, CF::PropertySet::PartialConfiguration);
+    void constructor();
     void initialize() throw (CF::LifeCycle::InitializeError, CORBA::SystemException);
 
 
@@ -212,15 +227,16 @@ public:
 
 private:
     // Property change listener methods
-    void advanced_propertiesChanged(const advanced_properties_struct *oldValue, const advanced_properties_struct *newValue);
-    void source_uriChanged(const std::string *oldValue, const std::string *newValue);
-    void file_formatChanged(const std::string *oldValue, const std::string *newValue);
-    void sample_rateChanged(const std::string *oldValue, const std::string *newValue);
-    void center_frequencyChanged(const std::string *oldValue, const std::string *newValue);
-    void playback_stateChanged(const std::string *oldValue, const std::string *newValue);
-    void default_timestampChanged(const default_timestamp_struct *oldValue, const default_timestamp_struct *newValue);
-    void default_sriChanged(const default_sri_struct *oldValue, const default_sri_struct *newValue);
-    void default_sri_keywordsChanged(const std::vector<sri_keywords_struct_struct> *oldValue, const std::vector<sri_keywords_struct_struct> *newValue);
+    void advanced_propertiesChanged(const advanced_properties_struct &oldValue, const advanced_properties_struct &newValue);
+    void source_uriChanged(std::string oldValue, std::string newValue);
+    void file_formatChanged(std::string oldValue, std::string newValue);
+    void sample_rateChanged(std::string oldValue, std::string newValue);
+    void center_frequencyChanged(std::string oldValue, std::string newValue);
+    void playback_stateChanged(std::string oldValue, std::string newValue);
+    void default_timestampChanged(const default_timestamp_struct &oldValue, const default_timestamp_struct &newValue);
+    void default_sriChanged(const default_sri_struct &oldValue, const default_sri_struct &newValue);
+    void default_sri_keywordsChanged(const std::vector<sri_keywords_struct_struct> &oldValue, const std::vector<sri_keywords_struct_struct> &newValue);
+    void output_bulkio_byte_orderChanged(std::string oldValue, std::string newValue);
 
     // Property change listener helper methods
     void restart_read_ahead_caching();
@@ -251,7 +267,7 @@ private:
     size_t throttle_rate_Bps;
     size_t throttle_usleep;
 
-    // Packet Buffer Queues 
+    // Packet Buffer Queues
     ts_queue_file_packet used_file_packets;
     ts_queue_file_packet available_file_packets;
 
@@ -262,6 +278,15 @@ private:
 
     long running_read_total;
     std::vector<char> empty_packet_data;
+
+    //Metadata File Objects
+    bulkio::InLongPort *metadataQueue;
+    ts_queue_size_t *packetSizeQueue;
+    //Metadata parser
+    MetaDataParser *MetaDataParser_i;
+
+    long BULKIO_BYTE_ORDER;
+
 
     //////////////////////
     // HELPER FUNCTIONS //
@@ -276,7 +301,7 @@ private:
     void reconstruct_property_sri(const double &sample_rate);
     void reconstruct_property_timestamp();
     void reset_throttle();
-    
+
     bool process_bluefile_fixedheader(shared_ptr_file_packet current_packet, blue::HeaderControlBlock* hcb);
     bool process_bluefile_extendedheader(shared_ptr_file_packet current_packet, blue::ExtendedHeader* e_hdr, bool isReal, bool byteSwap);
     bool process_wav_header(shared_ptr_file_packet current_packet, WAV_HELPERS::wav_file_header *wfh);
@@ -392,7 +417,7 @@ private:
         double fract, whole;
         fract = modf(from_time, &whole);
 
-        
+
         if (from_type == 1) {
             tstamp.tcmode = BULKIO::TCM_OFF;
             tstamp.tcstatus = BULKIO::TCS_VALID;

@@ -19,5 +19,5 @@
 
 rm -f config.cache
 [ -d m4 ] || mkdir m4
-autoreconf -i
+autoreconf -i -I acinclude
 

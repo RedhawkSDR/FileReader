@@ -128,7 +128,7 @@ void FileReader_base::loadProperties()
                 "property");
 
     addProperty(file_format,
-                "SHORT",
+                "SHORT_LITTLE_ENDIAN",
                 "file_format",
                 "file_format",
                 "readwrite",
@@ -163,6 +163,23 @@ void FileReader_base::loadProperties()
                 "external",
                 "property");
 
+    addProperty(output_bulkio_byte_order,
+                "host_order",
+                "output_bulkio_byte_order",
+                "output_bulkio_byte_order",
+                "readwrite",
+                "",
+                "external",
+                "property");
+
+    addProperty(host_byte_order,
+                "host_byte_order",
+                "host_byte_order",
+                "readonly",
+                "",
+                "external",
+                "property");
+
     addProperty(advanced_properties,
                 advanced_properties_struct(),
                 "advanced_properties",
@@ -188,7 +205,7 @@ void FileReader_base::loadProperties()
                 "readwrite",
                 "",
                 "external",
-                "configure");
+                "property");
 
     addProperty(component_status,
                 component_status_struct(),
