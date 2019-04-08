@@ -1,9 +1,9 @@
 variables:
   rh_20_release: '2-0-8'
   rh_22_release: '2-2-0'
-  rh_23_release: '2-3-0'
+  rh_23_release: 'develop'
   blueFileLib_version: '2.1.0-4'
-  RedhawkDevUtils_version: '4.0.1-6'
+  RedhawkDevUtils_version: '5.0.0-1'
   namespace: rh.
   test_suite: test_$CI_PROJECT_NAME.py
 
@@ -19,7 +19,7 @@ before_script:
     - if [ -z "$CI_COMMIT_TAG" ]; then
         redhawk_version=${latest_version}
         blueFileLib_version=develop
-        RedhawkDevUtils_version=feature-ccb-751-endian
+        RedhawkDevUtils_version=$CI_COMMIT_REF_SLUG
         rpm_release="0.$CI_PIPELINE_ID.rh${safe_version}";
       else
         redhawk_version=${release_version}
@@ -150,6 +150,7 @@ package:el6:rh2.3:
   variables:
     latest_version: develop
     release_version: $rh_23_release
+    blueFileLib_version: 'develop'
     short_version: '2.3'
     dist: el6
     arch: x86_64
@@ -159,6 +160,7 @@ package:el7:rh2.3:
   variables:
     latest_version: develop
     release_version: $rh_23_release
+    blueFileLib_version: 'develop'
     short_version: '2.3'
     dist: el7
     arch: x86_64
@@ -215,6 +217,7 @@ test:el6:rh2.3:
   variables:
     latest_version: develop
     release_version: $rh_23_release
+    blueFileLib_version: 'develop'
     short_version: '2.3'
     dist: el6
     arch: x86_64
@@ -224,6 +227,7 @@ test:el7:rh2.3:
   variables:
     latest_version: develop
     release_version: $rh_23_release
+    blueFileLib_version: 'develop'
     short_version: '2.3'
     dist: el7
     arch: x86_64
